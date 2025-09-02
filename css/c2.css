@@ -1,0 +1,291 @@
+body {
+    margin: 0;
+    line-height: 1.25;
+
+    font-family: "Atkinson Hyperlegible", sans-serif;
+}
+
+#top {
+    position: absolute;
+    top: 0;
+
+    width: 100%;
+    padding: 24px;
+    box-sizing: border-box;
+
+    background-color: #000000;
+    color: #ffffff;
+
+    cursor: default;
+    user-select: none;
+}
+
+#top h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+#cont {
+    padding: 126px 48px 48px 48px;
+    
+    display: flex;
+    gap: 24px;
+}
+
+#cont > div {
+    border: 2px solid #000000;
+    
+    padding: 12px;
+}
+
+#color {
+    width: 288px;
+}
+
+.color_show.bgcolor {
+    background-image: none;
+}
+
+#color_css {
+    width: 100%;
+    
+    box-sizing: border-box;
+}
+
+#color > div:not(:last-child) {
+    margin-bottom: 12px;
+}
+
+#color > div > div {
+    display: flex;
+}
+
+#color > div > div:not(:last-child) {
+    margin-bottom: 4px;
+}
+
+#color > div label {
+    width: 24px;
+    
+    line-height: 25px;
+}
+
+#color > div input {
+    flex-grow: 1;
+}
+
+#color > div label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+input[type=text], input[type=number] {
+    border: 1px solid #bbbbbb;
+    padding: 4px;
+    
+    font-size: 12px;
+    font-family: inherit;
+    line-height: 1.25;
+}
+
+input:focus {
+    border: 1px solid #66b8ff;
+    outline: 1px solid #66b8ff;
+}
+
+#cont_mods b {
+    font-size: 14px;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.color_output {
+    margin-top: 12px;
+    margin-bottom: 12px !important;
+    
+    font-size: 11px;
+    font-family: "Roboto Mono", monospace;
+}
+
+.color_output > div > div:not(:last-child) {
+    margin-bottom: 3px;
+}
+
+.color_output > div > div {
+    color: #222222;
+    
+    cursor: pointer;
+    user-select: none;
+    
+    /* transition: opacity 1s; */
+}
+
+.color_output > div > div:first-child {
+    color: #000000;
+    font-weight: bold;
+}
+
+.color_show {
+    width: 64px;
+    height: 64px;
+    
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAAXNSR0IArs4c6QAAABhJREFUGFdjPHPmzH8TExNGRgYGBgYQBwBD5AdmVJd8CQAAAABJRU5ErkJggg==");
+    background-size: 8px;
+    
+    image-rendering: pixelated;
+    
+    margin-right: 12px;
+}
+
+#color_output {
+    margin-top: 0;
+}
+
+#calc {
+    flex-grow: 1;
+    min-width: 288px;
+    max-width: 601px;
+    
+    display: flex;
+    flex-direction: column;
+    
+    padding: 0 !important;
+    
+    font-size: 16px;
+}
+
+#calc_settings {
+    padding: 8px;
+    border-bottom: 1px solid #888888;
+    
+    display: flex;
+}
+
+#calc_settings > div {
+    background-color: #555555;
+    
+    border-radius: calc(24.5px / 2);
+    display: flex;
+    padding: 2px;
+}
+
+#calc_settings button {
+    font-size: 10px;
+    line-height: 1.25;
+    padding: 4px 8px;
+    font-weight: bold;
+    
+    border-radius: calc(20.5px / 2);
+    
+    background-color: transparent;
+    border: none;
+    color: #ffffff;
+    
+    cursor: pointer;
+}
+
+#calc_settings button:disabled {
+    background-color: #ffffff;
+    color: #000000;
+    
+    cursor: initial;
+}
+
+#calc_log_cont {
+    flex-grow: 1;
+}
+
+#calc_log {
+    padding: 12px;
+    font-size: 16px;
+    white-space: pre-wrap;
+    
+    overflow: scroll;
+    max-height: 525.5px; /* 593.5 - 4 [border] - 40 [input] - 24 [padding] */
+    
+    font-family: "Roboto Mono", monospace;
+}
+
+.calc_code {
+    color: #888888;
+}
+
+.calc_output {
+    color: #000000;
+    font-weight: bold;
+    
+    text-align: right;
+}
+
+#calc_log > div {
+    display: flex;
+    justify-content: space-between;
+}
+
+#calc_log > div > span {
+    align-self: end;
+}
+
+#calc_log > div:not(:last-child) {
+    margin-bottom: 8px;
+}
+
+#calc_inputs_cont {
+    display: flex;
+    
+    border-top: 1px solid #888888;
+}
+
+.calc_input_cont {
+    display: grid;
+    
+    flex:1;
+}
+
+.calc_input_cont:focus-within {
+    flex: 3;
+}
+
+.calc_input_cont::after {
+    content: attr(data-copy) " ";
+    
+    white-space: pre-wrap;
+    visibility: hidden;
+}
+
+.calc_input_cont > textarea {
+    resize: none;
+    overflow: hidden;
+}
+
+.calc_input_cont > textarea, .calc_input_cont::after {
+    padding: 12px;
+    
+    border: none;
+    
+    font: inherit;
+    font-size: 16px;
+    line-height: 1.25;
+    word-break: break-all;
+    
+    background-color: inherit;
+    
+    grid-area: 1 / 1 / 2 / 2;
+}
+
+.calc_input_cont > textarea:focus {
+    padding: 11px;
+    
+    border: 1px solid #66b8ff;
+    outline: 1px solid #66b8ff;
+}
+
+.calc_input_border {
+    display: inline;
+    
+    height: 100%;
+    border-right: 1px solid #888888;
+    
+    position: relative;
+    z-index: -1;
+}

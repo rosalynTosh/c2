@@ -1,0 +1,55 @@
+@font-face {
+  font-family: "Roboto Mono";
+  font-style: normal;
+  font-weight: 400;
+  src: local(""), url("fonts/roboto-mono.woff2") format("woff2"), url("fonts/roboto-mono.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Roboto Mono";
+  font-style: normal;
+  font-weight: 700;
+  src: local(""), url("fonts/roboto-mono-bold.woff2") format("woff2"), url("fonts/roboto-mono-bold.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Roboto Mono";
+  font-style: italic;
+  font-weight: 400;
+  src: local(""), url("fonts/roboto-mono-italic.woff2") format("woff2"), url("fonts/roboto-mono-italic.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Roboto Mono";
+  font-style: italic;
+  font-weight: 700;
+  src: local(""), url("fonts/roboto-mono-bold-italic.woff2") format("woff2"), url("fonts/roboto-mono-bold-italic.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  font-style: normal;
+  font-weight: 400;
+  src: local(""), url("fonts/atkinson-hyperlegible.woff2") format("woff2"), url("fonts/atkinson-hyperlegible.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  font-style: normal;
+  font-weight: 700;
+  src: local(""), url("fonts/atkinson-hyperlegible-bold.woff2") format("woff2"), url("fonts/atkinson-hyperlegible-bold.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  font-style: italic;
+  font-weight: 400;
+  src: local(""), url("fonts/atkinson-hyperlegible-italic.woff2") format("woff2"), url("fonts/atkinson-hyperlegible-italic.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  font-style: italic;
+  font-weight: 700;
+  src: local(""), url("fonts/atkinson-hyperlegible-bold-italic.woff2") format("woff2"), url("fonts/atkinson-hyperlegible-bold-italic.woff") format("woff");
+}

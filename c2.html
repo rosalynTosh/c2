@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>C2</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        
+        <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+        
+        <link rel="stylesheet" href="css/fonts.css"/>
+        <link rel="stylesheet" href="css/c2.css"/>
+    </head>
+    
+    <body>
+        <div id="top">
+            <h1>C2</h1>
+        </div>
+        
+        <div id="cont">
+            <div id="color">
+                <div>
+                    <div id="color_output" class="color_output">
+                        <div id="color_show" class="color_show"></div>
+
+                        <div>
+                            <div id="color_disp_comp"><span id="color_disp_comp_p">#000000</span> (<span id="color_disp_comp_r">000000</span>)</div>
+                            <div id="color_disp_rgb">rgb(0, 0, 0)</div>
+                            <div id="color_disp_hsl">hsl(0, 0%, 0%)</div>
+                            <div id="color_disp_ycbcr">ycbcr(0, 128, 128)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cont_css">
+                    <input type="text" id="color_css" placeholder="hsl(208, 100%, 70%)"/>
+                </div>
+
+                <div id="cont_comp">
+                    <div>
+                        <label for="color_comp">x</label>
+                        <input type="text" id="color_comp"/>
+                    </div>
+                </div>
+
+                <div id="cont_rgb">
+                    <div>
+                        <label for="color_rgb_r">R</label>
+                        <input type="number" id="color_rgb_r"/>
+                    </div>
+
+                    <div>
+                        <label for="color_rgb_g">G</label>
+                        <input type="number" id="color_rgb_g"/>
+                    </div>
+
+                    <div>
+                        <label for="color_rgb_b">B</label>
+                        <input type="number" id="color_rgb_b"/>
+                    </div>
+                </div>
+
+                <div id="cont_hsl">
+                    <div>
+                        <label for="color_hsl_h">H</label>
+                        <input type="number" id="color_hsl_h"/>
+                    </div>
+
+                    <div>
+                        <label for="color_hsl_s">S</label>
+                        <input type="number" id="color_hsl_s"/>
+                    </div>
+
+                    <div>
+                        <label for="color_hsl_l">L</label>
+                        <input type="number" id="color_hsl_l"/>
+                    </div>
+                </div>
+
+                <div id="cont_ycbcr">
+                    <div>
+                        <label for="color_ycbcr_y">Y</label>
+                        <input type="number" id="color_ycbcr_y"/>
+                    </div>
+
+                    <div>
+                        <label for="color_ycbcr_cb">Cb</label>
+                        <input type="number" id="color_ycbcr_cb"/>
+                    </div>
+
+                    <div>
+                        <label for="color_ycbcr_cr">Cr</label>
+                        <input type="number" id="color_ycbcr_cr"/>
+                    </div>
+                </div>
+
+                <div id="cont_mods">
+                    <b>Mods:</b>
+
+                    <div id="color_mod_output" class="color_output">
+                        <div id="color_mod_show" class="color_show"></div>
+
+                        <div>
+                            <div id="color_mod_disp_comp"><span id="color_mod_disp_comp_p">#000000</span> (<span id="color_mod_disp_comp_r">000000</span>)</div>
+                            <div id="color_mod_disp_rgb">rgb(0, 0, 0)</div>
+                            <div id="color_mod_disp_hsl">hsl(0, 0%, 0%)</div>
+                            <div id="color_mod_disp_ycbcr">ycbcr(0, 0, 0)</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="color_mod_b">B&pm;</label>
+                        <input type="number" id="color_mod_b"/>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="calc">
+                <!--<div id="calc_settings">
+                    <div id="calc_setting_mode">
+                        <button id="calc_setting_mode_std" disabled>STD</button>
+                        <button id="calc_setting_mode_fp">FP</button>
+                    </div>
+                </div>-->
+                
+                <div id="calc_log_cont">
+                    <div id="calc_log"></div>
+                </div>
+                
+                <div id="calc_inputs_cont">
+                    <div class="calc_input_cont" class="grow">
+                        <textarea id="calc_input_std" rows="1" cols="100" placeholder="sqrt(1 + 2)" oninput="this.parentNode.dataset.copy = this.value"></textarea>
+                    </div>
+                    
+                    <div class="calc_input_border"></div>
+
+                    <div class="calc_input_cont" class="grow">
+                        <textarea id="calc_input_fp" rows="1" cols="100" placeholder="1 2 + sqrt" oninput="this.parentNode.dataset.copy = this.value"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script src="js/c2.js"></script>
+        <script src="js/c2-color.js"></script>
+        <script src="js/c2-calc.js"></script>
+    </body>
+</html>
