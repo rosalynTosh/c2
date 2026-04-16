@@ -1,4 +1,4 @@
-import { compToRGB, hslToRGB, rgbToComp, rgbToHSL, rgbToYCbCr, roundToThousandths, ycbcrToRGB } from "./color-utils";
+import { CompColor, compToRGB, HSLColor, hslToRGB, RGBColor, rgbToComp, rgbToHSL, rgbToYCbCr, roundToThousandths, strsToHSL, strsToRGB, strsToYCbCr, strToComp, YCbCrColor, ycbcrToRGB } from "./color-utils";
 
 export class ColorModule {
     private colorShowDiv = document.getElementById("color_show") as HTMLDivElement;
@@ -35,7 +35,7 @@ export class ColorModule {
 
     private modBrightnessInput = document.getElementById("color_mod_b") as HTMLInputElement;
 
-    private color: [number, number, number] | null = null;
+    private color: RGBColor | null = null;
     private modBrightness: number | null = null;
 
     constructor() {
@@ -132,34 +132,34 @@ export class ColorModule {
         this.ycbcrCrInput.value = "";
     }
 
-    private setCompInput(comp: string) {
+    private setCompInput(comp: CompColor) {
         this.compInput.value = comp;
     }
 
-    private setRGBInputs(rgb: [number, number, number]) {
-        this.rgbRInput.value = roundToThousandths(rgb[0]).toString();
-        this.rgbGInput.value = roundToThousandths(rgb[1]).toString();
-        this.rgbBInput.value = roundToThousandths(rgb[2]).toString();
+    private setRGBInputs(rgb: RGBColor) {
+        this.rgbRInput.value = roundToThousandths(rgb.r).toString();
+        this.rgbGInput.value = roundToThousandths(rgb.g).toString();
+        this.rgbBInput.value = roundToThousandths(rgb.b).toString();
     }
 
-    private setHSLInputs(hsl: [number, number, number]) {
-        this.hslHInput.value = roundToThousandths(hsl[0]).toString();
-        this.hslSInput.value = roundToThousandths(hsl[1]).toString();
-        this.hslLInput.value = roundToThousandths(hsl[2]).toString();
+    private setHSLInputs(hsl: HSLColor) {
+        this.hslHInput.value = roundToThousandths(hsl.h).toString();
+        this.hslSInput.value = roundToThousandths(hsl.s).toString();
+        this.hslLInput.value = roundToThousandths(hsl.l).toString();
     }
 
-    private setYCbCrInputs(ycbcr: [number, number, number]) {
-        this.ycbcrYInput.value = roundToThousandths(ycbcr[0]).toString();
-        this.ycbcrCbInput.value = roundToThousandths(ycbcr[1]).toString();
-        this.ycbcrCrInput.value = roundToThousandths(ycbcr[2]).toString();
+    private setYCbCrInputs(ycbcr: YCbCrColor) {
+        this.ycbcrYInput.value = roundToThousandths(ycbcr.y).toString();
+        this.ycbcrCbInput.value = roundToThousandths(ycbcr.cb).toString();
+        this.ycbcrCrInput.value = roundToThousandths(ycbcr.cr).toString();
     }
 
-    private setColorDisp(comp: string, rgb: [number, number, number], hsl: [number, number, number], ycbcr: [number, number, number]) {
+    private setColorDisp(comp: CompColor, rgb: RGBColor, hsl: HSLColor, ycbcr: YCbCrColor) {
         this.colorDispCSSCompSpan.textContent = "#" + comp;
         this.colorDispCompSpan.textContent = comp;
-        this.colorDispRGBDiv.textContent = "rgb(" + roundToThousandths(rgb[0]) + ", " + roundToThousandths(rgb[1]) + ", " + roundToThousandths(rgb[2]) + ")";
-        this.colorDispHSLDiv.textContent = "hsl(" + roundToThousandths(hsl[0]) + ", " + roundToThousandths(hsl[1]) + "%, " + roundToThousandths(hsl[2]) + "%)";
-        this.colorDispYCbCrDiv.textContent = "ycbcr(" + roundToThousandths(ycbcr[0]) + ", " + roundToThousandths(ycbcr[1]) + ", " + roundToThousandths(ycbcr[2]) + ")";
+        this.colorDispRGBDiv.textContent = "rgb(" + roundToThousandths(rgb.r) + ", " + roundToThousandths(rgb.g) + ", " + roundToThousandths(rgb.b) + ")";
+        this.colorDispHSLDiv.textContent = "hsl(" + roundToThousandths(hsl.h) + ", " + roundToThousandths(hsl.s) + "%, " + roundToThousandths(hsl.l) + "%)";
+        this.colorDispYCbCrDiv.textContent = "ycbcr(" + roundToThousandths(ycbcr.y) + ", " + roundToThousandths(ycbcr.cb) + ", " + roundToThousandths(ycbcr.cr) + ")";
     }
 
     private async onCSSInput() {
@@ -221,18 +221,18 @@ export class ColorModule {
 
         this.color = null;
 
-        const comp = this.compInput.value;
+        const comp = strToComp(this.compInput.value);
 
-        if (!comp.match(/^[0-9a-f]{6}$/i)) return;
+        if (comp === null) return;
 
         const rgb = compToRGB(comp);
-        const hsl = rgbToHSL(...rgb);
-        const ycbcr = rgbToYCbCr(...rgb);
+        const hsl = rgbToHSL(rgb);
+        const ycbcr = rgbToYCbCr(rgb);
 
         this.colorShowDiv.classList.add("bgcolor");
         this.colorShowDiv.style.backgroundColor = "#" + comp;
 
-        this.color = [...rgb];
+        this.color = { ...rgb };
 
         this.setRGBInputs(rgb);
         this.setHSLInputs(hsl);
@@ -251,20 +251,18 @@ export class ColorModule {
 
         this.color = null;
 
-        const rgbStrs = [this.rgbRInput.value, this.rgbGInput.value, this.rgbBInput.value] as const;
-        const rgb = rgbStrs.map(c => Number(c)) as [number, number, number];
+        const rgb = strsToRGB(this.rgbRInput.value, this.rgbGInput.value, this.rgbBInput.value);
 
-        if (rgbStrs.some(x => x === "")) return;
-        if (rgb.some(x => Number.isNaN(x) || x < 0 || x > 255)) return;
+        if (rgb === null) return null;
 
-        const comp = rgbToComp(...rgb);
-        const hsl = rgbToHSL(...rgb);
-        const ycbcr = rgbToYCbCr(...rgb);
+        const comp = rgbToComp(rgb);
+        const hsl = rgbToHSL(rgb);
+        const ycbcr = rgbToYCbCr(rgb);
 
         this.colorShowDiv.classList.add("bgcolor");
-        this.colorShowDiv.style.backgroundColor = "rgb(" + rgbStrs[0] + ", " + rgbStrs[1] + ", " + rgbStrs[2] + ")";
+        this.colorShowDiv.style.backgroundColor = "rgb(" + rgb.r + ", " + rgb.g + ", " + rgb.b + ")";
 
-        this.color = [...rgb];
+        this.color = { ...rgb };
 
         this.setCompInput(comp);
         this.setHSLInputs(hsl);
@@ -283,22 +281,18 @@ export class ColorModule {
 
         this.color = null;
 
-        const hslStrs = [this.hslHInput.value, this.hslSInput.value, this.hslLInput.value] as const;
-        const hsl = hslStrs.map(c => Number(c)) as [number, number, number];
+        const hsl = strsToHSL(this.hslHInput.value, this.hslSInput.value, this.hslLInput.value);
 
-        if (hslStrs.some(x => x === "")) return;
-        if (hsl.some(x => Number.isNaN(x))) return;
-        if (hsl[1] < 0 || hsl[1] > 100) return;
-        if (hsl[2] < 0 || hsl[2] > 100) return;
+        if (hsl === null) return;
 
         this.colorShowDiv.classList.add("bgcolor");
-        this.colorShowDiv.style.backgroundColor = "hsl(" + hslStrs[0] + ", " + hslStrs[1] + "%, " + hslStrs[2] + "%)";
+        this.colorShowDiv.style.backgroundColor = "hsl(" + hsl.h + ", " + hsl.s + "%, " + hsl.l + "%)";
 
-        const rgb = hslToRGB(...hsl);
-        const comp = rgbToComp(...rgb);
-        const ycbcr = rgbToYCbCr(...rgb);
+        const rgb = hslToRGB(hsl);
+        const comp = rgbToComp(rgb);
+        const ycbcr = rgbToYCbCr(rgb);
 
-        this.color = [...rgb];
+        this.color = { ...rgb };
 
         this.setCompInput(comp);
         this.setRGBInputs(rgb);
@@ -317,20 +311,18 @@ export class ColorModule {
 
         this.color = null;
 
-        const ycbcrStrs = [this.rgbRInput.value, this.rgbGInput.value, this.rgbBInput.value] as const;
-        const ycbcr = ycbcrStrs.map(c => Number(c)) as [number, number, number];
+        const ycbcr = strsToYCbCr(this.ycbcrYInput.value, this.ycbcrCbInput.value, this.ycbcrCrInput.value);
 
-        if (ycbcrStrs.some(x => x === "")) return;
-        if (ycbcr.some(x => Number.isNaN(x) || x < 0 || x > 255)) return;
+        if (ycbcr === null) return;
 
-        const rgb = ycbcrToRGB(...ycbcr);
-        const comp = rgbToComp(...rgb);
-        const hsl = rgbToHSL(...rgb);
+        const rgb = ycbcrToRGB(ycbcr);
+        const comp = rgbToComp(rgb);
+        const hsl = rgbToHSL(rgb);
 
-        this.color = [...rgb];
+        this.color = { ...rgb };
 
         this.colorShowDiv.classList.add("bgcolor");
-        this.colorShowDiv.style.backgroundColor = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
+        this.colorShowDiv.style.backgroundColor = "rgb(" + rgb.r + ", " + rgb.g + ", " + rgb.b + ")";
 
         this.setCompInput(comp);
         this.setRGBInputs(rgb);
@@ -357,19 +349,39 @@ export class ColorModule {
 
         if (this.color === null) return;
 
-        const rgb = this.color.map(x => modBrightness < 0 ? x * (1 + modBrightness) : x + (255 - x) * modBrightness) as [number, number, number];
+        function applyBrightnessMod(orig: RGBColor): RGBColor {
+            function darken(x: number): number {
+                return x * (1 + modBrightness);
+            }
+
+            function lighten(x: number): number {
+                return x + (255 - x) * modBrightness;
+            }
+
+            return modBrightness < 0 ? {
+                r: darken(orig.r),
+                g: darken(orig.g),
+                b: darken(orig.b)
+            } : {
+                r: lighten(orig.r),
+                g: lighten(orig.g),
+                b: lighten(orig.b)
+            };
+        }
+
+        const rgb = applyBrightnessMod(this.color);
 
         this.modColorShowDiv.classList.add("bgcolor");
-        this.modColorShowDiv.style.backgroundColor = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
+        this.modColorShowDiv.style.backgroundColor = "rgb(" + rgb.r + ", " + rgb.g + ", " + rgb.b + ")";
 
-        const comp = rgbToComp(...rgb);
-        const hsl = rgbToHSL(...rgb);
-        const ycbcr = rgbToYCbCr(...rgb);
+        const comp = rgbToComp(rgb);
+        const hsl = rgbToHSL(rgb);
+        const ycbcr = rgbToYCbCr(rgb);
 
         this.modColorDispCSSCompSpan.textContent = "#" + comp;
         this.modColorDispCompSpan.textContent = comp;
-        this.modColorDispRGBDiv.textContent = "rgb(" + roundToThousandths(rgb[0]) + ", " + roundToThousandths(rgb[1]) + ", " + roundToThousandths(rgb[2]) + ")";
-        this.modColorDispHSLDiv.textContent = "hsl(" + roundToThousandths(hsl[0]) + ", " + roundToThousandths(hsl[1]) + "%, " + roundToThousandths(hsl[2]) + "%)";
-        this.modColorDispYCbCrDiv.textContent = "ycbcr(" + roundToThousandths(ycbcr[0]) + ", " + roundToThousandths(ycbcr[1]) + ", " + roundToThousandths(ycbcr[2]) + ")";
+        this.modColorDispRGBDiv.textContent = "rgb(" + roundToThousandths(rgb.r) + ", " + roundToThousandths(rgb.g) + ", " + roundToThousandths(rgb.b) + ")";
+        this.modColorDispHSLDiv.textContent = "hsl(" + roundToThousandths(hsl.h) + ", " + roundToThousandths(hsl.s) + "%, " + roundToThousandths(hsl.l) + "%)";
+        this.modColorDispYCbCrDiv.textContent = "ycbcr(" + roundToThousandths(ycbcr.y) + ", " + roundToThousandths(ycbcr.cb) + ", " + roundToThousandths(ycbcr.cr) + ")";
     }
 }

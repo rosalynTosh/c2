@@ -1,5 +1,7 @@
 import { CalcModule } from "./calc";
+import { ColorModule } from "./color";
 
+new ColorModule();
 new CalcModule();
 
 /*(() => {
