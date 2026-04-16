@@ -1,5 +1,5 @@
-import { init as initColor } from "./color.ts";
-import { init as initCalc } from "./calc.ts";
+import { init as initColor } from "./color";
+import { init as initCalc } from "./calc";
 
 initColor();
 initCalc();
