@@ -1,8 +1,6 @@
-import { init as initColor } from "./color";
-import { init as initCalc } from "./calc";
+import { CalcModule } from "./calc";
 
-initColor();
-initCalc();
+new CalcModule();
 
 /*(() => {
     var vars = new Map();
