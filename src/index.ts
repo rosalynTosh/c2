@@ -1,4 +1,8 @@
+import { init as initColor } from "./color.ts";
+import { init as initCalc } from "./calc.ts";
 
+initColor();
+initCalc();
 
 /*(() => {
     var vars = new Map();
