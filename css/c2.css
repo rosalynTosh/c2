@@ -39,6 +39,11 @@ body {
 }
 
 #color {
+    display: flex;
+    gap: 12px;
+}
+
+.color_chooser {
     width: 288px;
 }
 
@@ -52,29 +57,29 @@ body {
     box-sizing: border-box;
 }
 
-#color > div:not(:last-child) {
+.color_chooser > div:not(:last-child) {
     margin-bottom: 12px;
 }
 
-#color > div > div {
+.color_chooser > div > div {
     display: flex;
 }
 
-#color > div > div:not(:last-child) {
+.color_chooser > div > div:not(:last-child) {
     margin-bottom: 4px;
 }
 
-#color > div label {
+.color_chooser > div label {
     width: 24px;
     
     line-height: 25px;
 }
 
-#color > div input {
+.color_chooser > div input {
     flex-grow: 1;
 }
 
-#color > div label {
+.color_chooser > div label {
     font-size: 14px;
     font-weight: bold;
 }
@@ -139,6 +144,12 @@ input:focus {
 
 #color_output {
     margin-top: 0;
+}
+
+.middle {
+    width: 1px;
+    height: 100%;
+    background-color: #888;
 }
 
 #calc {
