@@ -6,10 +6,16 @@
     function run_calc(ast) {}
     
     function parse_std(input) {
-        var toks = input.match(/([0-9]*\.)?[0-9]+(e-?[0-9]+)?|[a-zA-Z]+|\*\*|\/\/|\&\&|\|\||[=!<>]=|\{[^}]*\}|\s+|./);
+        var toks = (input.match(/(?:[0-9]+\.)?[0-9]+|[a-zA-Z]+|\*+|\s+|./g) || []).filter(t => !t.match(/^\s+$/));
+
+        console.log(toks);
     }
     
     function parse_fp(input) {
         
     }
+
+    input_std.addEventListener("input", () => {
+        parse_std(input_std.value);
+    });
 })();
