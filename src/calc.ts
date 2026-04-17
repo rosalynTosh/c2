@@ -1,18 +1,305 @@
-type AST = {
-    type: "binOp",
-    op: "+" | "-" | "*" | "/" | "**",
-    lhs: AST,
-    rhs: AST
-} | {
+// Future todo: standardize +/-Inf and +/-0 for int/rational, prevent NaN with floats
+
+interface IntNum {
+    readonly type: "int";
+    readonly int: bigint;
+}
+
+interface RationalNum {
+    readonly type: "rational";
+    readonly n: bigint;
+    readonly d: bigint;
+}
+
+interface FloatNum {
+    readonly type: "float";
+    readonly num: number;
+}
+
+type Num = IntNum | RationalNum | FloatNum;
+
+interface BinOpAST {
+    readonly type: "binOp";
+    readonly op: "+" | "-" | "*" | "/" | "%" | "**";
+    readonly lhs: AST;
+    readonly rhs: AST;
+}
+
+type AST = BinOpAST | {
     type: "unaryOp",
     op: string,
     arg: AST
 } | {
     type: "num",
-    num: number
+    num: Num
 } | {
     type: "input"
 };
+
+function simplify(num: RationalNum): RationalNum {
+    let num_n = num.n < 0n ? -num.n : num.n;
+    let num_d = num.d;
+
+    let gcd: bigint;
+
+    if (num_n == 0n) {
+        gcd = num_d;
+    } else if (num_d == 0n) {
+        gcd = num_n;
+    } else if (num_n == num_d) {
+        gcd = num_n;
+    } else {
+        let i_0;
+        let i_1;
+
+        for (i_0 = 0n; num_n % 2n == 0n; i_0++) {
+            num_n /= 2n;
+        }
+
+        for (i_1 = 0n; num_d % 2n == 0n; i_1++) {
+            num_d /= 2n;
+        }
+
+        const k = i_0 < i_1 ? i_0 : i_1;
+
+        let n;
+
+        while (num_n != num_d) {
+            if (num_d > num_n) {
+                n = num_n;
+
+                num_n = num_d;
+                num_d = n;
+            }
+
+            num_n -= num_d;
+
+            do {
+                num_n /= 2n;
+            } while (!(num_n % 2n));
+        }
+
+        gcd = num_n * (2n ** k);
+    }
+
+    return {
+        type: "rational",
+        n: num.n / gcd,
+        d: num.d / gcd
+    };
+}
+
+function add(lhs: Num, rhs: Num): Num {
+    switch (lhs.type) {
+        case "int": {
+            switch (rhs.type) {
+                case "int": {
+                    return { type: "int", int: lhs.int + rhs.int };
+                }
+                case "rational": {
+                    return { type: "rational", n: lhs.int * rhs.d + rhs.n, d: rhs.d };
+                }
+                case "float": {
+                    return { type: "float", num: Number(lhs.int) + rhs.num };
+                }
+            }
+        }
+        case "rational": {
+            switch (rhs.type) {
+                case "int": {
+                    return { type: "rational", n: lhs.n + rhs.int * lhs.d, d: lhs.d };
+                }
+                case "rational": {
+                    return simplify({ type: "rational", n: lhs.n * rhs.d + rhs.n * lhs.d, d: lhs.d * rhs.d });
+                }
+                case "float": {
+                    return { type: "float", num: Number(lhs.n) / Number(lhs.d) + rhs.num };
+                }
+            }
+        }
+        case "float": {
+            switch (rhs.type) {
+                case "int": {
+                    return { type: "float", num: lhs.num + Number(rhs.int) };
+                }
+                case "rational": {
+                    return { type: "float", num: lhs.num + Number(rhs.n) / Number(rhs.d) };
+                }
+                case "float": {
+                    return { type: "float", num: lhs.num + rhs.num };
+                }
+            }
+        }
+    }
+}
+
+function neg(arg: Num): Num {
+    switch (arg.type) {
+        case "int": {
+            return { type: "int", int: -arg.int };
+        }
+        case "rational": {
+            return { type: "rational", n: -arg.n, d: arg.d };
+        }
+        case "float": {
+            return { type: "float", num: -arg.num };
+        }
+    }
+}
+
+function sub(lhs: Num, rhs: Num): Num {
+    return add(lhs, neg(rhs));
+}
+
+function mul(lhs: Num, rhs: Num): Num {
+    switch (lhs.type) {
+        case "int": {
+            switch (rhs.type) {
+                case "int": {
+                    return { type: "int", int: lhs.int * rhs.int };
+                }
+                case "rational": {
+                    return simplify({ type: "rational", n: lhs.int * rhs.n, d: rhs.d });
+                }
+                case "float": {
+                    return { type: "float", num: Number(lhs.int) * rhs.num };
+                }
+            }
+        }
+        case "rational": {
+            switch (rhs.type) {
+                case "int": {
+                    return simplify({ type: "rational", n: lhs.n * rhs.int, d: lhs.d });
+                }
+                case "rational": {
+                    return simplify({ type: "rational", n: lhs.n * rhs.n, d: lhs.d * rhs.d });
+                }
+                case "float": {
+                    return { type: "float", num: Number(lhs.n) / Number(lhs.d) * rhs.num };
+                }
+            }
+        }
+        case "float": {
+            switch (rhs.type) {
+                case "int": {
+                    return { type: "float", num: lhs.num * Number(rhs.int) };
+                }
+                case "rational": {
+                    return { type: "float", num: lhs.num * Number(rhs.n) / Number(rhs.d) };
+                }
+                case "float": {
+                    return { type: "float", num: lhs.num * rhs.num };
+                }
+            }
+        }
+    }
+}
+
+function div(lhs: Num, rhs: Num): Num {
+    switch (lhs.type) {
+        case "int": {
+            switch (rhs.type) {
+                case "int": {
+                    return simplify({ type: "rational", n: lhs.int, d: rhs.int });
+                }
+                case "rational": {
+                    return simplify({ type: "rational", n: lhs.int * rhs.d, d: rhs.n });
+                }
+                case "float": {
+                    return { type: "float", num: Number(lhs.int) / rhs.num };
+                }
+            }
+        }
+        case "rational": {
+            switch (rhs.type) {
+                case "int": {
+                    return simplify({ type: "rational", n: lhs.n, d: lhs.d * rhs.int });
+                }
+                case "rational": {
+                    return simplify({ type: "rational", n: lhs.n * rhs.d, d: lhs.d * rhs.n });
+                }
+                case "float": {
+                    return { type: "float", num: Number(lhs.n) / Number(lhs.d) / rhs.num };
+                }
+            }
+        }
+        case "float": {
+            switch (rhs.type) {
+                case "int": {
+                    return { type: "float", num: lhs.num / Number(rhs.int) };
+                }
+                case "rational": {
+                    return { type: "float", num: lhs.num / Number(rhs.n) * Number(rhs.d) };
+                }
+                case "float": {
+                    return { type: "float", num: lhs.num / rhs.num };
+                }
+            }
+        }
+    }
+}
+
+function floor(arg: Num): Num {
+    switch (arg.type) {
+        case "int": {
+            return arg;
+        }
+        case "rational": {
+            return arg.d == 0n ? arg : { type: "rational", n: arg.n / arg.d + (arg.n >= 0n || arg.n % arg.d == 0n ? 0n : -1n), d: 1n };
+        }
+        case "float": {
+            return { type: "float", num: Math.floor(arg.num) };
+        }
+    }
+}
+
+function mod(lhs: Num, rhs: Num): Num {
+    return sub(lhs, mul(floor(div(lhs, rhs)), rhs));
+}
+
+function pow(lhs: Num, rhs: Num): Num {
+    switch (lhs.type) {
+        case "int": {
+            switch (rhs.type) {
+                case "int": {
+                    return rhs.int >= 0n ? { type: "rational", n: lhs.int ** rhs.int, d: 1n } : { type: "rational", n: 1n, d: lhs.int ** -rhs.int };
+                }
+                case "rational": {
+                    return { type: "float", num: Number(lhs.int) ** (Number(rhs.n) / Number(rhs.d)) };
+                }
+                case "float": {
+                    return { type: "float", num: Number(lhs.int) ** rhs.num };
+                }
+            }
+        }
+        case "rational": {
+            switch (rhs.type) {
+                case "int": {
+                    return rhs.int >= 0n ? { type: "rational", n: lhs.n ** rhs.int, d: lhs.d ** rhs.int } : { type: "rational", n: lhs.d ** -rhs.int, d: lhs.n ** -rhs.int };
+                }
+                case "rational": {
+                    return { type: "float", num: (Number(lhs.n) / Number(lhs.d)) ** (Number(rhs.n) / Number(rhs.d)) };
+                }
+                case "float": {
+                    return { type: "float", num: (Number(lhs.n) / Number(lhs.d)) ** rhs.num };
+                }
+            }
+        }
+        case "float": {
+            switch (rhs.type) {
+                case "int": {
+                    return { type: "float", num: lhs.num ** Number(rhs.int) };
+                }
+                case "rational": {
+                    return { type: "float", num: lhs.num ** (Number(rhs.n) / Number(rhs.d)) };
+                }
+                case "float": {
+                    return { type: "float", num: lhs.num ** rhs.num };
+                }
+            }
+        }
+    }
+}
 
 export class CalcModule {
     private logDiv: HTMLDivElement;
@@ -32,7 +319,10 @@ export class CalcModule {
             if (event.code === "Enter" && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
                 const input = this.stdInput.value;
 
-                this.parseStd(input);
+                const ast = this.parseStd(input);
+                const output = this.runCalc(ast, []);
+
+                console.log(output);
 
                 this.stdInput.value = "";
                 this.stdInput.parentElement!.dataset.copy = this.stdInput.value;
@@ -59,9 +349,55 @@ export class CalcModule {
         });
     }
 
-    private runCalc(ast: unknown) {}
+    private runCalc(ast: AST, inputs: Num[]): Num {
+        switch (ast.type) {
+            case "binOp": {
+                const lhs = this.runCalc(ast.lhs, inputs);
+                const rhs = this.runCalc(ast.rhs, inputs);
 
-    private parseStd(input: string) {
+                switch (ast.op) {
+                    case "+": {
+                        return add(lhs, rhs);
+                    }
+                    case "-": {
+                        return sub(lhs, rhs);
+                    }
+                    case "*": {
+                        return mul(lhs, rhs);
+                    }
+                    case "/": {
+                        return div(lhs, rhs);
+                    }
+                    case "%": {
+                        return mod(lhs, rhs);
+                    }
+                    case "**": {
+                        return pow(lhs, rhs);
+                    }
+                }
+            }
+            case "unaryOp": {
+                const arg = this.runCalc(ast.arg, inputs);
+
+                switch (ast.op) {
+                    case "_": {
+                        return neg(arg);
+                    }
+                    default: {
+                        throw new ReferenceError();
+                    }
+                }
+            }
+            case "num": {
+                return ast.num;
+            }
+            case "input": {
+                return inputs.shift()!;
+            }
+        }
+    }
+
+    private parseStd(input: string): AST {
         const toks = (input.match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*|[a-zA-Z]+(?:_+[a-zA-Z]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
 
         type Grouping = {
@@ -111,256 +447,68 @@ export class CalcModule {
             throw new SyntaxError();
         }
 
+        console.log(groupingToks);
+
+        function buildBinOpsParser(ops: ReadonlyArray<BinOpAST["op"]>, followingRoundFn: (toks: Grouping["toks"]) => AST): (toks: Grouping["toks"]) => AST {
+            const origOps = ops;
+
+            return function(toks: Grouping["toks"]): AST {
+                console.log("binOps for " + origOps.join(" "), toks);
+
+                let ops = origOps;
+
+                let state: { op: (typeof ops)[number], lhs: AST } | null = null;
+                let idx = 0;
+
+                while (true) {
+                    const idxs = ops.map((op) => toks.indexOf(op, idx));
+                    const foundIdxs = idxs.filter(i => i != -1);
+
+                    if (foundIdxs.length == 0) {
+                        const rhs = followingRoundFn(toks.slice(idx));
+
+                        return state === null ? rhs : {
+                            type: "binOp",
+                            op: state.op,
+                            lhs: state.lhs,
+                            rhs
+                        };
+                    } else {
+                        const minIdx = Math.min(...foundIdxs);
+                        const op = ops[idxs.indexOf(minIdx)];
+
+                        ops = ops.filter((_, i) => idxs[i] != -1);
+
+                        const rhs = followingRoundFn(toks.slice(idx, minIdx));
+
+                        state = {
+                            op,
+                            lhs: state === null ? rhs : {
+                                type: "binOp",
+                                op: state.op,
+                                lhs: state.lhs,
+                                rhs
+                            }
+                        };
+
+                        idx = minIdx + 1;
+                    }
+                }
+            };
+        }
+
         // Group 1: + and -
-        function parseBinOps1(toks: Grouping["toks"]): AST {
-            let state: { op: "+" | "-", lhs: AST } | null = null;
-            let idx = 0;
+        let parseBinOps1: (toks: Grouping["toks"]) => AST;
 
-            while (true) {
-                const idxPlus = toks.indexOf("+", idx);
-                const idxMinus = toks.indexOf("-", idx);
+        // Group 2: * and / and %
+        let parseBinOps2 = buildBinOpsParser(["*", "/", "%"], parseBinOps3)
 
-                if (idxPlus == -1 && idxMinus == -1) {
-                    const rhs = parseBinOps2(toks.slice(idx));
-
-                    return state === null ? rhs : {
-                        type: "binOp",
-                        op: state.op,
-                        lhs: state.lhs,
-                        rhs
-                    };
-                } else if (idxPlus == -1) {
-                    const rhs = parseBinOps2(toks.slice(idx, idxMinus));
-
-                    state = {
-                        op: "-",
-                        lhs: state === null ? rhs : {
-                            type: "binOp",
-                            op: state.op,
-                            lhs: state.lhs,
-                            rhs
-                        }
-                    };
-
-                    idx = idxMinus + 1;
-
-                    while (true) {
-                        const idxMinus = toks.indexOf("-", idx);
-
-                        if (idxMinus == -1) {
-                            const rhs = parseBinOps2(toks.slice(idx));
-
-                            return {
-                                type: "binOp",
-                                op: state.op,
-                                lhs: state.lhs,
-                                rhs
-                            };
-                        } else {
-                            const rhs = parseBinOps2(toks.slice(idx, idxMinus));
-
-                            state = {
-                                op: "-",
-                                lhs: {
-                                    type: "binOp",
-                                    op: state.op,
-                                    lhs: state.lhs,
-                                    rhs
-                                }
-                            };
-
-                            idx = idxMinus + 1;
-                        }
-                    }
-                } else if (idxMinus == -1) {
-                    const rhs = parseBinOps2(toks.slice(idx, idxPlus));
-
-                    state = {
-                        op: "+",
-                        lhs: state === null ? rhs : {
-                            type: "binOp",
-                            op: state.op,
-                            lhs: state.lhs,
-                            rhs
-                        }
-                    };
-
-                    idx = idxPlus + 1;
-
-                    while (true) {
-                        const idxPlus = toks.indexOf("+", idx);
-
-                        if (idxPlus == -1) {
-                            const rhs = parseBinOps2(toks.slice(idx));
-
-                            return {
-                                type: "binOp",
-                                op: state.op,
-                                lhs: state.lhs,
-                                rhs
-                            };
-                        } else {
-                            const rhs = parseBinOps2(toks.slice(idx, idxPlus));
-
-                            state = {
-                                op: "+",
-                                lhs: {
-                                    type: "binOp",
-                                    op: state.op,
-                                    lhs: state.lhs,
-                                    rhs
-                                }
-                            };
-
-                            idx = idxPlus + 1;
-                        }
-                    }
-                } else {
-                    const minIdx = Math.min(idxPlus, idxMinus);
-
-                    const rhs = parseBinOps2(toks.slice(idx, minIdx));
-
-                    state = {
-                        op: minIdx == idxPlus ? "+" : "-",
-                        lhs: state === null ? rhs : {
-                            type: "binOp",
-                            op: state.op,
-                            lhs: state.lhs,
-                            rhs
-                        }
-                    };
-
-                    idx = minIdx + 1;
-                }
-            }
-        }
-
-        // Group 2: * and /
-        function parseBinOps2(toks: Grouping["toks"]): AST {
-            let state: { op: "*" | "/", lhs: AST } | null = null;
-            let idx = 0;
-
-            while (true) {
-                const idxTimes = toks.indexOf("*", idx);
-                const idxDiv = toks.indexOf("/", idx);
-
-                if (idxTimes == -1 && idxDiv == -1) {
-                    const rhs = parseBinOps3(toks.slice(idx));
-
-                    return state === null ? rhs : {
-                        type: "binOp",
-                        op: state.op,
-                        lhs: state.lhs,
-                        rhs
-                    };
-                } else if (idxTimes == -1) {
-                    const rhs = parseBinOps3(toks.slice(idx, idxDiv));
-
-                    state = {
-                        op: "/",
-                        lhs: state === null ? rhs : {
-                            type: "binOp",
-                            op: state.op,
-                            lhs: state.lhs,
-                            rhs
-                        }
-                    };
-
-                    idx = idxDiv + 1;
-
-                    while (true) {
-                        const idxDiv = toks.indexOf("/", idx);
-
-                        if (idxDiv == -1) {
-                            const rhs = parseBinOps3(toks.slice(idx));
-
-                            return {
-                                type: "binOp",
-                                op: state.op,
-                                lhs: state.lhs,
-                                rhs
-                            };
-                        } else {
-                            const rhs = parseBinOps3(toks.slice(idx, idxDiv));
-
-                            state = {
-                                op: "/",
-                                lhs: {
-                                    type: "binOp",
-                                    op: state.op,
-                                    lhs: state.lhs,
-                                    rhs
-                                }
-                            };
-
-                            idx = idxDiv + 1;
-                        }
-                    }
-                } else if (idxDiv == -1) {
-                    const rhs = parseBinOps3(toks.slice(idx, idxTimes));
-
-                    state = {
-                        op: "*",
-                        lhs: state === null ? rhs : {
-                            type: "binOp",
-                            op: state.op,
-                            lhs: state.lhs,
-                            rhs
-                        }
-                    };
-
-                    idx = idxTimes + 1;
-
-                    while (true) {
-                        const idxTimes = toks.indexOf("*", idx);
-
-                        if (idxTimes == -1) {
-                            const rhs = parseBinOps3(toks.slice(idx));
-
-                            return {
-                                type: "binOp",
-                                op: state.op,
-                                lhs: state.lhs,
-                                rhs
-                            };
-                        } else {
-                            const rhs = parseBinOps3(toks.slice(idx, idxTimes));
-
-                            state = {
-                                op: "*",
-                                lhs: {
-                                    type: "binOp",
-                                    op: state.op,
-                                    lhs: state.lhs,
-                                    rhs
-                                }
-                            };
-
-                            idx = idxTimes + 1;
-                        }
-                    }
-                } else {
-                    const minIdx = Math.min(idxTimes, idxDiv);
-
-                    const rhs = parseBinOps3(toks.slice(idx, minIdx));
-
-                    state = {
-                        op: minIdx == idxTimes ? "*" : "/",
-                        lhs: state === null ? rhs : {
-                            type: "binOp",
-                            op: state.op,
-                            lhs: state.lhs,
-                            rhs
-                        }
-                    };
-
-                    idx = minIdx + 1;
-                }
-            }
-        }
+        parseBinOps1 = buildBinOpsParser(["+", "-"], parseBinOps2);
 
         // Group 3: **
         function parseBinOps3(toks: Grouping["toks"]): AST {
+            console.log("binOps3", toks);
+
             let rhs: AST | null = null;
             let idx = toks.length;
 
@@ -391,6 +539,8 @@ export class CalcModule {
 
         // Group 4: unary functions
         function parseUnaryOps(toks: Grouping["toks"]): AST {
+            console.log("unaryOps", toks);
+
             if (toks.length != 0 && typeof toks[0] == "string" && toks[0][0].match(/[a-zA-Z_]/)) {
                 return {
                     type: "unaryOp",
@@ -404,6 +554,8 @@ export class CalcModule {
 
         // Group 5: check for single literal or grouping
         function parseSingleThing(toks: Grouping["toks"]): AST {
+            console.log("singleThing", toks);
+
             if (toks.length == 0) return {
                 type: "input"
             };
@@ -417,21 +569,35 @@ export class CalcModule {
                     throw new SyntaxError();
                 }
 
+                const numStr = toks[0].replace(/_/g, "");
+
+                if (!numStr.includes(".")) {
+                    return {
+                        type: "num",
+                        num: {
+                            type: "int",
+                            int: BigInt(numStr)
+                        }
+                    };
+                }
+
                 return {
                     type: "num",
-                    num: Number(toks[0])
+                    num: simplify({
+                        type: "rational",
+                        n: BigInt(numStr.replace(/\./, "")),
+                        d: 10n ** BigInt((numStr.length - 1) - numStr.indexOf("."))
+                    })
                 };
             } else {
                 return parseBinOps1(toks[0].toks);
             }
         }
 
-        const ast = parseBinOps1(groupingToks);
-
-        console.log(ast);
+        return parseBinOps1(groupingToks);
     }
 
     private parseFp(input: string) {
-
+        // swizzle operations: xyzw
     }
 }
