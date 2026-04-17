@@ -20,6 +20,9 @@ const config: webpack.Configuration = {
         filename: "bundle.js",
         path: path.resolve("./dist"),
     },
+    devtool: [
+        { type: "javascript", use: "source-map" }
+    ]
 };
 
 export default config;
