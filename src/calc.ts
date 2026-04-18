@@ -18,6 +18,36 @@ interface FloatNum {
 
 type Num = IntNum | RationalNum | FloatNum;
 
+interface UnitlessUnit {
+    readonly type: "unitless";
+}
+
+interface BaseUnit {
+    readonly type: "base";
+    readonly unit: string;
+    readonly scale: Num;
+}
+
+interface ProdUnit {
+    readonly type: "prod";
+    readonly lhs: Unit;
+    readonly rhs: Unit;
+}
+
+interface QuotUnit {
+    readonly type: "quot";
+    readonly lhs: Unit;
+    readonly rhs: Unit;
+}
+
+interface PowUnit {
+    readonly type: "pow";
+    readonly arg: Unit;
+    readonly pow: bigint;
+}
+
+type Unit = UnitlessUnit | BaseUnit | ProdUnit | QuotUnit | PowUnit;
+
 interface BinOpAST {
     readonly type: "binOp";
     readonly op: "+" | "-" | "*" | "/" | "%" | "**";
@@ -25,16 +55,341 @@ interface BinOpAST {
     readonly rhs: AST;
 }
 
-type AST = BinOpAST | {
-    type: "unaryOp",
-    op: string,
-    arg: AST
-} | {
-    type: "num",
-    num: Num
-} | {
-    type: "input"
-};
+interface UnaryOpAST {
+    readonly type: "unaryOp";
+    readonly op: string;
+    readonly arg: AST;
+}
+
+interface UnitOpAST {
+    readonly type: "unitOp";
+    readonly unit: Unit;
+    readonly arg: AST;
+}
+
+interface NumAST {
+    readonly type: "num";
+    readonly num: Num;
+}
+
+interface InputAST {
+    readonly type: "input";
+}
+
+type AST = BinOpAST | UnaryOpAST | UnitOpAST | NumAST | InputAST;
+
+const UNARY_OPS = [
+    "sqrt"
+] as const;
+
+const UNITS = [
+    "pm",
+    "nm",
+    "\xb5m",
+    "mm",
+    "cm",
+    "m",
+    "km",
+
+    "mil",
+    "in",
+    "ft",
+    "yd",
+    "mi",
+
+    "\xb0C",
+    "\xb0F",
+    "K",
+
+    "ha",
+    "ac",
+
+    "pl",
+    "nl",
+    "ml",
+    "cl",
+    "dl",
+    "l",
+
+    "oz",
+    "cup",
+    "pi",
+    "qt",
+    "gal",
+
+    "s",
+    "min",
+    "h",
+    "hr",
+
+    ""
+] as const;
+
+function buildUnitTable(): Map<string, Unit> {
+    const SI_PREFIXES_LONG = {
+        "quecto": { type: "rational", n: 1n, d: 10n ** 30n },
+        "ronto": { type: "rational", n: 1n, d: 10n ** 27n },
+        "yocto": { type: "rational", n: 1n, d: 10n ** 24n },
+        "zepto": { type: "rational", n: 1n, d: 10n ** 21n },
+        "atto": { type: "rational", n: 1n, d: 10n ** 18n },
+        "femto": { type: "rational", n: 1n, d: 10n ** 15n },
+        "pico": { type: "rational", n: 1n, d: 10n ** 12n },
+        "nano": { type: "rational", n: 1n, d: 1_000_000_000n },
+        "micro": { type: "rational", n: 1n, d: 1_000_000n },
+        "milli": { type: "rational", n: 1n, d: 1000n },
+        "centi": { type: "rational", n: 1n, d: 100n },
+        "deci": { type: "rational", n: 1n, d: 10n },
+        "deca": { type: "int", int: 10n },
+        "hecto": { type: "int", int: 100n },
+        "kilo": { type: "int", int: 1000n },
+        "mega": { type: "int", int: 1_000_000n },
+        "giga": { type: "int", int: 1_000_000_000n },
+        "tera": { type: "int", int: 10n ** 12n },
+        "peta": { type: "int", int: 10n ** 15n },
+        "exa": { type: "int", int: 10n ** 18n },
+        "zetta": { type: "int", int: 10n ** 21n },
+        "yotta": { type: "int", int: 10n ** 24n },
+        "ronna": { type: "int", int: 10n ** 27n },
+        "quetta": { type: "int", int: 10n ** 30n },
+    } as const satisfies { [prefix: string]: IntNum | RationalNum };
+
+    const SI_PREFIXES_SHORT = {
+        "q": { type: "rational", n: 1n, d: 10n ** 30n },
+        "r": { type: "rational", n: 1n, d: 10n ** 27n },
+        "y": { type: "rational", n: 1n, d: 10n ** 24n },
+        "z": { type: "rational", n: 1n, d: 10n ** 21n },
+        "a": { type: "rational", n: 1n, d: 10n ** 18n },
+        "f": { type: "rational", n: 1n, d: 10n ** 15n },
+        "p": { type: "rational", n: 1n, d: 10n ** 12n },
+        "n": { type: "rational", n: 1n, d: 1_000_000_000n },
+        "\xb5": { type: "rational", n: 1n, d: 1_000_000n },
+        "mc": { type: "rational", n: 1n, d: 1_000_000n },
+        "m": { type: "rational", n: 1n, d: 1000n },
+        "c": { type: "rational", n: 1n, d: 100n },
+        "d": { type: "rational", n: 1n, d: 10n },
+        "da": { type: "int", int: 10n },
+        "h": { type: "int", int: 100n },
+        "k": { type: "int", int: 1000n },
+        "M": { type: "int", int: 1_000_000n },
+        "G": { type: "int", int: 1_000_000_000n },
+        "T": { type: "int", int: 10n ** 12n },
+        "P": { type: "int", int: 10n ** 15n },
+        "E": { type: "int", int: 10n ** 18n },
+        "Z": { type: "int", int: 10n ** 21n },
+        "Y": { type: "int", int: 10n ** 24n },
+        "R": { type: "int", int: 10n ** 27n },
+        "Q": { type: "int", int: 10n ** 30n },
+    } as const satisfies { [prefix: string]: IntNum | RationalNum };
+
+    // binary prefixes
+
+    const UNITS_LONG = [
+        // length
+        "angstrom",
+        "micron",
+        "meter",
+        "mil",
+        "inch",
+        "foot",
+        "yard",
+        "furlong",
+        "mile",
+        "fathom",
+        "league",
+        "nautical_mile",
+        "link",
+        "chain",
+        "rod",
+        "parsec",
+        "astronomical_unit",
+        "planck_length",
+        "pixel",
+        "point",
+
+        // area
+        "hectare",
+        "acre",
+        "barn",
+        "shed",
+
+        // volume
+        "liter",
+        "us_gallon",
+        "us_quart",
+        "us_pint",
+        "us_cup",
+        "us_fluid_ounce",
+        "us_tablespoon",
+        "us_teaspoon",
+        "imperial_gallon",
+        "imperial_quart",
+        "imperial_pint",
+        "imperial_cup",
+        "imperial_fluid_ounce",
+        "imperial_tablespoon",
+        "imperial_teaspoon",
+        "barrel",
+        "board_foot",
+        "cord",
+        "bushel",
+
+        // plane angle
+        "radian",
+        "revolution",
+        "degree_of_arc",
+        "arcminute",
+        "arcsecond",
+        "grad",
+
+        // solid angle
+        "steradian",
+        "spat",
+
+        // mass
+        "gram",
+        "pound_mass",
+        "ounce_mass",
+        "metric_ton",
+        "short_ton_mass",
+        "long_ton_mass",
+        "atomic_mass_unit",
+        "grain",
+        "troy_ounce",
+        "troy_pound",
+        "pound_avoirdupois",
+        "ounce_avoirdupois",
+        "stone",
+        "carat",
+        "slug",
+
+        // time
+        "second",
+        "minute",
+        "hour",
+        "day",
+        "week",
+        "fortnight",
+        "month",
+        "year",
+        "decade",
+        "century",
+        "millennium",
+        "planck_time",
+
+        // frequency
+        "hertz",
+
+        // speed or velocity
+        "knot",
+        "speed_of_light",
+
+        // acceleration
+        "standard_gravity",
+
+        // weight/force
+        "newton",
+        "dyne",
+        "pound",
+        "poundal",
+        "ounce",
+        "short_ton",
+        "long_ton",
+
+        // pressure
+        "atmosphere",
+        "bar",
+        "barye",
+        "pascal",
+        "torr",
+
+        // energy
+        "british_thermal_unit",
+        "calorie",
+        "joule",
+        "electronvolt",
+        "therm",
+
+        // power
+        "watt",
+        "horsepower",
+
+        // electricity/magnetism
+        "coulomb",
+        "ampere",
+        "volt",
+        "ohm",
+        "siemens",
+        "farad",
+        "weber",
+        "gauss",
+        "tesla",
+        "henry",
+
+        // temperature
+        "degree_celsius",
+        "degree_fahrenheit",
+        "degree_rankine",
+        "kelvin",
+
+        // information
+        "natural_unit_of_information",
+        "bit",
+        "nibble",
+        "byte",
+
+        // luminous intensity
+        "candela",
+
+        // luminous flux
+        "lumen",
+
+        // illuminance
+        "lux",
+        "footcandle",
+
+        // radiation and doses
+        "becquerel",
+        "curie",
+        "rutherford",
+        "roentgen",
+        "gray",
+        "rad",
+        "rontgen_equivalent_man",
+        "sievert",
+
+        // amount of substance
+        "mole",
+    ];
+
+    const UNITS_LONG_PLURALS = {} as const satisfies { [alias: string]: string };
+    const UNITS_LONG_ALIASES = {
+        "thou": "mil",
+        "metre": "meter",
+        "litre": "liter",
+        "shannon": "bit"
+    } as const satisfies { [alias: string]: string };
+    const UNITS_LONG_ALIAS_PLURALS = {} as const satisfies { [alias: string]: string };
+
+    const UNITS_LONG_SPECIAL = {
+        "fermi": {},
+        "angstrom": {},
+        "\xe5ngstrom": {},
+        "angstr\xf6m": {},
+        "myriameter": {},
+        "xu": {},
+        "pi\xe8ze",
+    } as const satisfies { [name: string]: Unit };
+
+    // square/sq
+    // cubic
+    // light
+    // displacement
+    // MOA
+    // of mercurcy (length to pressure)
+    // of water (length to pressure)
+    // interconversion between units of mass and weight/force
+    // fucked up oilfield units
+}
 
 function simplify(num: RationalNum): RationalNum {
     let num_n = num.n < 0n ? -num.n : num.n;
@@ -548,27 +903,47 @@ export class CalcModule {
                     arg: parseUnaryOps(toks.slice(1))
                 };
             } else {
-                return parseSingleThing(toks);
+                return parseUnits(toks);
             }
         }
 
-        // Group 5: check for single literal or grouping
+        // Group 5: units
+        function parseUnits(toks: Grouping["toks"]): AST {
+            console.log("units", toks);
+
+            function parseUnitAbbr(abbr: string) {
+            }
+
+            if (toks.length != 0) {
+                const lastTok = toks[toks.length - 1];
+
+                if (typeof lastTok == "string" && lastTok[0].match(/[a-zA-Z]/)) {
+                    return {
+                        type: "unitOp",
+                        unit: parseUnitAbbr(lastTok),
+                        arg: parseSingleThing(toks.slice(0, -1))
+                    };
+                } else if (typeof lastTok == "object" && lastTok.type == "[]") {
+                    return {
+                        type: "unitOp",
+                        unit: parseFullUnit(lastTok.toks),
+                        arg: parseUnits(toks.slice(0, -1))
+                    };
+                }
+            }
+
+            return parseSingleThing(toks);
+        }
+
+        // Group 6: check for single literal or grouping
         function parseSingleThing(toks: Grouping["toks"]): AST {
             console.log("singleThing", toks);
 
-            if (toks.length == 0) return {
-                type: "input"
-            };
-
-            if (toks.length > 1) {
-                throw new SyntaxError();
-            }
-
-            if (typeof toks[0] == "string") {
-                if (!toks[0][0].match(/[0-9]/)) {
-                    throw new SyntaxError();
-                }
-
+            if (toks.length == 0) {
+                return {
+                    type: "input"
+                };
+            } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[0-9]/)) {
                 const numStr = toks[0].replace(/_/g, "");
 
                 if (!numStr.includes(".")) {
@@ -589,8 +964,10 @@ export class CalcModule {
                         d: 10n ** BigInt((numStr.length - 1) - numStr.indexOf("."))
                     })
                 };
-            } else {
+            } else if (toks.length == 1 && typeof toks[0] == "object" && toks[0].type == "()") {
                 return parseBinOps1(toks[0].toks);
+            } else {
+                throw new SyntaxError();
             }
         }
 
