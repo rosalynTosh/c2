@@ -1437,50 +1437,6 @@ const BINARY_PREFIXES_SHORT: { [prefix: string]: Num } = {
     "Qi": { type: "int", int: 1024n ** 10n },
 };
 
-export function parseShortUnit(shortUnit: string) {
-
-}
-
-// Long unit normalization:
-// 1. normalize to NFC
-// 2. lowercase
-
-// Long unit matching rules:
-// 1. plurals and different accent forms are accounted for
-// 2. any combination of "of"s can be removed
-// 3. words can be in any order
-// 4. any combination of underscores can be removed
-
-// Long unit modifier rules:
-// 1. the long or lowercase short base unit may be used
-// 2. long SI prefixes may be inserted before any word (but not after the last word)
-// 3. short SI prefixes may be inserted before any word (but not after the last word)
-// 4. for times, "light" or "l" may be inserted before any word (but not after the last word)
-// 5. for lengths, "square", "squared", "sq", "cube", "cubed", "cubic", or "cb" may be inserted at any position
-// 6. for lengths, "[of] mercury" or "[of] hg" may be inserted at any position
-// 7. for lengths, masses, weights/forces, or volumes, "[of] water" or "[of] h2o" may be inserted at any position
-// 8. for masses, weights/forces, or volumes, "[of] displacement", "[of] disp", "[of] water displacement", "[of] water disp", "[of] h2o displacement", or "[of] h20 disp" may be inserted at any position
-// 9. for masses, "[of] weight", "[of] wght", "[of] wgt", "[of] wt", "[of] w", "[of] force", or "[of] f" may be inserted at any position
-// 10. for weights/forces, "[of] mass" may be inserted at any position
-
-// Short unit normalization:
-// 1. normalize to NFC
-
-// Short unit matching rules:
-// 1. parts separated by underscores can be in any order
-// 2. any combination of underscores can be removed
-// 3. any combination of uppercase letters can be lowercased
-
-// Short unit modifier rules:
-// 1. the short or lowercase short base unit may be used
-// 2. short SI prefixes may be inserted before any word (but not after the last word)
-// 3. for times, "l" may be inserted before any word (but not after the last word)
-// 4. for lengths, "sq" or "cb" may be inserted at any position
-// 5. for lengths, "Hg" or "hg" may be inserted after any word (but not before the first word)
-// 6. for lengths, masses, weights/forces, or volumes, "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
-// 7. for masses, weights/forces, or volumes, "disp" may be inserted after any word (but not before the first word)
-// 8. for masses, "wght", "wgt", "wt", "w", or "f" may be inserted after any word (but not before the first word)
-
 function orderings<T>(array: T[]): T[][] {
     if (array.length == 0) return [[]];
     if (array.length == 1) return [[array[0]]];
@@ -1513,56 +1469,6 @@ function combinationsWithout<T>(array: T[], without: T): T[][] {
     const indices = [...array.keys()].filter((i) => array[i] === without);
 
     return combinations(indices).map((comb) => array.filter((_, i) => !comb.includes(i)));
-}
-
-function buildAliasLongForms(aliasProps: UnitProps | Exclude<UnitProps["aliases"], undefined>[number]): Set<string> {
-    const id = aliasProps.id;
-
-    if (id != id.normalize("NFC").toLowerCase()) {
-        throw new Error(id);
-    }
-
-    // 1. plurals and different accent forms are accounted for
-
-    let inOrderForms = aliasProps.plurals === undefined ? [[...id], [...id, "s"]] : [id, ...aliasProps.plurals].map((form) => [...form]);
-
-    for (const accent of aliasProps.accents ?? []) {
-        inOrderForms = inOrderForms.concat(inOrderForms.map((form) => [
-            ...form.slice(0, accent.index),
-            accent.unicode,
-            ...form.slice(accent.index + 1)
-        ]));
-    }
-
-    const splitInOrderForms = inOrderForms.map((form) => form.join("").split("_"));
-
-    // 2. any combination of "of"s can be removed
-
-    const withoutOfForms = splitInOrderForms.flatMap((form) => combinationsWithout(form, "of"));
-
-    // 3. words can be in any order
-
-    const outOfOrderForms = withoutOfForms.flatMap((form) => orderings(form));
-
-    const splicedForms = outOfOrderForms.map((form) => form.length == 0 ? [] : [form[0], ...form.slice(1).flatMap((word) => ["_", word])]);
-
-    // 4. any combination of underscores can be removed
-
-    const withoutUnderscoreForms = splicedForms.flatMap((form) => combinationsWithout(form, "_"));
-
-    return new Set(withoutUnderscoreForms.map((form) => form.join("")));
-}
-
-function buildUnitLongForms(unitProps: UnitProps): Set<string> {
-    const forms: Set<string> = new Set();
-
-    for (const alias of [unitProps, ...(unitProps.aliases ?? [])]) {
-        for (const form of buildAliasLongForms(alias)) {
-            forms.add(form);
-        }
-    }
-
-    return forms;
 }
 
 function buildShortForms(id: string): Set<string> {
@@ -1626,229 +1532,13 @@ function buildUnitLowercaseShortForms(unitProps: UnitProps): Set<string> {
     return forms;
 }
 
-type Mod = "si_prefix" | "light" | "square" | "cubic" | "of_mercury" | "of_water" | "of_displacement" | "of_weight" | "of_mass";
-type ModifiedForms = Map<string, { mods: Mod[], dimension: string }>;
-
-// todo: make these invoke dimensionally-correct functions instead of being hardcoded
-const MOD_DIMENSION_CHANGES: { [mod in Mod]?: { [dimension: string]: string } } = {
-    "light": {
-        "time": "length"
-    },
-    "square": {
-        "length": "area"
-    },
-    "cubic": {
-        "length": "volume"
-    },
-    "of_mercury": {
-        "length": "pressure"
-    },
-    "of_water": {
-        "length": "pressure",
-        "mass": "volume",
-        "force": "volume",
-        "volume": "mass"
-    },
-    "of_displacement": {
-        "mass": "volume",
-        "force": "volume",
-        "volume": "mass"
-    },
-    "of_weight": {
-        "mass": "force"
-    },
-    "of_mass": {
-        "force": "mass"
-    }
-};
-
-function insertModifiersInner(before: boolean, after: boolean, forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
-    const modForms: ModifiedForms = new Map();
-
-    function insertModForm(form: string, mods: Mod[], dimension: string) {
-        const foundForm = modForms.get(form);
-        if (foundForm !== undefined) {
-            if (foundForm.mods.join(",") != mods.join(",") || foundForm.dimension != dimension) {
-                console.log("MOD CONFLICT", form, mods, dimension);
-            }
-        } else {
-            modForms.set(form, { mods, dimension });
-        }
-    }
-
-    for (const [form, { mods: formMods, dimension }] of forms) {
-        insertModForm(form, formMods, dimension);
-
-        if (dimensions !== undefined && !dimensions.includes(dimension)) continue;
-        if (mutExMods !== undefined && formMods.some(m => mutExMods.includes(m))) continue;
-
-        for (const [modStr, mod] of mods) {
-            const nFormMods = formMods.concat([mod]).sort();
-            const nDimension = (MOD_DIMENSION_CHANGES[mod] ?? {})[dimension] ?? dimension;
-
-            if (before) {
-                insertModForm(modStr + form, nFormMods, nDimension);
-                if (after) insertModForm(modStr + "_" + form, nFormMods, nDimension);
-            }
-
-            for (const { index } of form.matchAll(/_/g)) {
-                const lo = form.slice(0, index);
-                const hi = form.slice(index + 1);
-
-                if (after) insertModForm(lo + "_" + modStr + "_" + hi, nFormMods, nDimension);
-                insertModForm(lo + "_" + modStr + hi, nFormMods, nDimension);
-                if (after) insertModForm(lo + modStr + "_" + hi, nFormMods, nDimension);
-                insertModForm(lo + modStr + hi, nFormMods, nDimension);
-            }
-
-            if (after) {
-                insertModForm(form + modStr, nFormMods, nDimension);
-                insertModForm(form + "_" + modStr, nFormMods, nDimension);
-            }
-        }
-    }
-
-    return modForms;
-}
-
-function insertModifiersBefore(forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
-    return insertModifiersInner(true, false, forms, mods, dimensions, mutExMods);
-}
-
-function insertModifiers(forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
-    return insertModifiersInner(true, true, forms, mods, dimensions, mutExMods);
-}
-
-function insertModifiersAfter(forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
-    return insertModifiersInner(false, true, forms, mods, dimensions, mutExMods);
-}
-
-function buildLongModifierForms(baseForms: string[], unitProps: UnitProps): ModifiedForms {
-    let forms: ModifiedForms = new Map(baseForms.map(f => [f, { mods: [], dimension: unitProps.quantity }]));
-
-    // 2. long SI prefixes may be inserted before any word (but not after the last word)
-    // 3. short SI prefixes may be inserted before any word (but not after the last word)
-
-    forms = insertModifiersBefore(forms, new Map([
-        ...Object.keys(SI_PREFIXES_LONG).flatMap((modStr) => [modStr, modStr + "_"]),
-        ...Object.keys(SI_PREFIXES_SHORT).filter((modStr) => modStr == modStr.toLowerCase())
-    ].map((modStr) => [modStr, "si_prefix"])));
-
-    // 4. for times, "light" or "l" may be inserted before any word (but not after the last word)
-
-    forms = insertModifiersBefore(forms, new Map(["light", "light_", "l"].map((modStr) => [modStr, "light"])), ["time"]);
-
-    // 5. for lengths, "square", "squared", "sq", "cube", "cubed", "cubic", or "cb" may be inserted at any position
-    // 6. for lengths, "[of] mercury" or "[of] hg" may be inserted at any position
-
-    forms = insertModifiers(forms, new Map([
-        ...["square", "squared", "sq"].map((modStr): [string, Mod] => [modStr, "square"]),
-        ...["cube", "cubed", "cubic", "cb"].map((modStr): [string, Mod] => [modStr, "cubic"]),
-        ...["of_mercury", "ofmercury", "mercury", "of_hg", "ofhg", "hg"].map((modStr): [string, Mod] => [modStr, "of_mercury"]),
-    ]), ["length"]);
-
-    // 9. for masses, "[of] weight", "[of] wght", "[of] wgt", "[of] wt", "[of] w", "[of] force", or "[of] f" may be inserted at any position
-
-    forms = insertModifiers(forms, new Map([
-        "of_weight", "ofweight", "weight",
-        "of_wght", "ofwght", "wght",
-        "of_wgt", "ofwgt", "wgt",
-        "of_wt", "ofwt", "wt",
-        "of_w", "ofw", "w",
-        "of_force", "offorce", "force",
-        "of_f", "off", "f"
-    ].map((modStr) => [modStr, "of_weight"])), ["mass"]);
-
-    // 10. for weights/forces, "[of] mass" may be inserted at any position
-
-    forms = insertModifiers(forms, new Map(["of_mass", "ofmass", "mass"].map((modStr) => [modStr, "of_mass"])), ["force"], ["of_weight"]);
-
-    // 7. for lengths, masses, weights/forces, or volumes, "[of] water" or "[of] h2o" may be inserted at any position
-
-    forms = insertModifiers(forms, new Map(["of_water", "ofwater", "water", "of_h2o", "ofh2o", "h2o"].map((modStr) => [modStr, "of_water"])), ["length", "mass", "force", "volume"], ["of_weight", "of_mass"]);
-
-    // 8. for masses, weights/forces, or volumes, "[of] displacement", "[of] disp", "[of] water displacement", "[of] water disp", "[of] h2o displacement", or "[of] h20 disp" may be inserted at any position
-
-    forms = insertModifiers(forms, new Map([
-        "of_displacement", "ofdisplacement", "displacement", "of_disp", "ofdisp", "disp",
-        "of_water_displacement", "ofwater_displacement", "water_displacement", "of_water_disp", "ofwater_disp", "water_disp",
-        "of_waterdisplacement", "ofwaterdisplacement", "waterdisplacement", "of_waterdisp", "ofwaterdisp", "waterdisp",
-        "of_h2o_displacement", "ofh2o_displacement", "h2o_displacement", "of_h2o_disp", "ofh2o_disp", "h2o_disp",
-        "of_h2odisplacement", "ofh2odisplacement", "h2odisplacement", "of_h2odisp", "ofh2odisp", "h2odisp"
-    ].map((modStr) => [modStr, "of_displacement"])), ["length", "mass", "force", "volume"], ["of_weight", "of_mass", "of_water"]);
-
-    return new Map([...forms].filter(([_, { mods, dimension: _dimension }]) => mods.length != 0));
-}
-
-function buildShortModifierForms(baseForms: string[], unitProps: UnitProps): ModifiedForms {
-    let forms: ModifiedForms = new Map(baseForms.map(f => [f, { mods: [], dimension: unitProps.quantity }]));
-
-    // 2. short SI prefixes may be inserted before any word (but not after the last word)
-
-    forms = insertModifiersBefore(forms, new Map(Object.keys(SI_PREFIXES_SHORT).map((modStr) => [modStr, "si_prefix"])));
-
-    // 3. for times, "l" may be inserted before any word (but not after the last word)
-
-    forms = insertModifiersBefore(forms, new Map([["l", "light"]]), ["time"]);
-
-    // 4. for lengths, "sq" or "cb" may be inserted at any position
-
-    forms = insertModifiers(forms, new Map([
-        ["sq", "square"],
-        ["cb", "cubic"],
-    ]), ["length"]);
-
-    // 5. for lengths, "Hg" or "hg" may be inserted after any word (but not before the first word)
-
-    forms = insertModifiersAfter(forms, new Map([
-        ["Hg", "of_mercury"],
-        ["hg", "of_mercury"],
-    ]), ["length"]);
-
-    // 8. for masses, "wght", "wgt", "wt", "w", or "f" may be inserted after any word (but not before the first word)
-
-    forms = insertModifiersAfter(forms, new Map(["wght", "wgt", "wt", "w", "f"].map((modStr) => [modStr, "of_weight"])), ["mass"]);
-
-    // 6. for lengths, masses, weights/forces, or volumes, "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
-
-    forms = insertModifiers(forms, new Map(["H2O", "h2O", "H2o", "h2o"].map((modStr) => [modStr, "of_water"])), ["length", "mass", "force", "volume"], ["of_weight"]);
-
-    // 7. for masses, weights/forces, or volumes, "disp" with optional pre- or post-fixed "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
-
-    forms = insertModifiersAfter(forms, new Map([
-        "disp",
-        "dispH2O", "disph2O", "dispH2o", "disph2o",
-        "disp_H2O", "disp_h2O", "disp_H2o", "disp_h2o",
-        "H2Odisp", "h2Odisp", "H2odisp", "h2odisp",
-        "H2O_disp", "h2O_disp", "H2o_disp", "h2o_disp",
-    ].map((modStr) => [modStr, "of_displacement"])), ["length", "mass", "force", "volume"], ["of_weight", "of_water"]);
-
-    return new Map([...forms].filter(([_, { mods, dimension: _dimension }]) => mods.length != 0));
-}
-
-export function buildUnitReference(): Set<string> {
-    // 1. build all permutations of long names
-    // 2. mix in short names
-    // 3. take product with all permutations of prefixes
-    // 4. resolve conflicts
-
-    // 1. build long/short base units
-
-    const longBaseUnits: Map<string, string> = new Map();
+function buildShortUnitReference() {
     const shortBaseUnits: Map<string, string> = new Map();
     const lowercaseShortBaseUnits: Map<string, string> = new Map();
 
     for (const unit of UNIT_PROPS) {
-        for (const form of buildUnitLongForms(unit)) {
-            if (longBaseUnits.has(form)) {
-                console.log("LONG CONTRADICTION: " + unit.id + " " + form);
-            } else {
-                longBaseUnits.set(form, unit.id);
-            }
-        }
-
         for (const form of buildUnitShortForms(unit)) {
-            if (longBaseUnits.has(form) && longBaseUnits.get(form) !== unit.id || shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id) {
+            if (shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id) {
                 console.log("SHORT CONTRADICTION: " + unit.id + " " + form);
             } else {
                 shortBaseUnits.set(form, unit.id);
@@ -1856,39 +1546,417 @@ export function buildUnitReference(): Set<string> {
         }
 
         for (const form of buildUnitLowercaseShortForms(unit)) {
-            if (longBaseUnits.has(form) && longBaseUnits.get(form) !== unit.id || shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id || lowercaseShortBaseUnits.has(form) && lowercaseShortBaseUnits.get(form) !== unit.id) {
+            if (shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id || lowercaseShortBaseUnits.has(form) && lowercaseShortBaseUnits.get(form) !== unit.id) {
                 console.log("lowercase short contradiction: " + unit.id + " " + form);
             } else {
                 lowercaseShortBaseUnits.set(form, unit.id);
             }
         }
     }
+}
 
-    // 2. add modifiers
+const scaleRegExp = new RegExp([...Object.keys(SI_PREFIXES_SHORT), ...Object.keys(BINARY_PREFIXES_SHORT)].join("|"), "g");
 
-    const longModifiedUnits: Map<string, { unitId: string, mods: Mod[], dimension: string }> = new Map();
-    const shortModifiedUnits: Map<string, { unitId: string, mods: Mod[], dimension: string }> = new Map();
+export function parseShortUnit(shortUnit: string) {
+    shortUnit = shortUnit.normalize("NFC");
 
-    for (const unit of [UNIT_PROPS[Math.floor(Math.random() * UNIT_PROPS.length)]]) {
-        // for (const [form, { mods, dimension }] of buildLongModifierForms([...longBaseUnits, ...lowercaseShortBaseUnits].filter(([_, unitId]) => unitId == unit.id).map(([baseUnit, _]) => baseUnit), unit)) {
-        //     if (longBaseUnits.has(form)) {
-        //         console.log("modified long contradiction: " + unit.id + " " + form);
-        //     } else {
-        //         longModifiedUnits.set(form, { unitId: unit.id, mods, dimension });
-        //     }
-        // }
+    type ParserStage = (parts: string[], mods: Record<string, { modStr: string, index: number } | null>) => void;
+    function buildParserStage(modId: string, startIndexModId: string | null, modRegExp: RegExp, matchValidator: (lo: string, hi: string) => boolean, nStageFn: ParserStage): ParserStage {
+        return function(parts: string[], mods: Record<string, { modStr: string, index: number } | null>): void {
+            for (let i = startIndexModId === null ? 0 : mods[startIndexModId]?.index ?? 0; i < parts.length; i++) {
+                const part = parts[i];
 
-        for (const [form, { mods, dimension }] of buildShortModifierForms([...shortBaseUnits, ...lowercaseShortBaseUnits].filter(([_, unitId]) => unitId == unit.id).map(([baseUnit, _]) => baseUnit), unit)) {
-            if (longBaseUnits.has(form) && longBaseUnits.get(form) !== unit.id || shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id || lowercaseShortBaseUnits.has(form) && lowercaseShortBaseUnits.get(form) !== unit.id || shortModifiedUnits.has(form) && shortModifiedUnits.get(form)!.unitId !== unit.id) {
-                console.log("modified short contradiction: " + unit.id + " " + form);
-            } else {
-                shortModifiedUnits.set(form, { unitId: unit.id, mods, dimension });
+                for (const match of part.matchAll(modRegExp)) {
+                    const modStr = match[0];
+                    const index = match.index;
+
+                    const lo = part.slice(0, index);
+                    const hi = part.slice(index + modStr.length);
+                    const superLo = parts.slice(0, i).join("") + lo;
+                    const superHi = hi + parts.slice(i + 1).join("");
+
+                    if (!matchValidator(superLo, superHi)) continue;
+
+                    nStageFn([
+                        ...parts.slice(0, i),
+                        ...(lo == "" ? [] : [lo]),
+                        ...(hi == "" ? [] : [hi]),
+                        ...parts.slice(i + 1)
+                    ], { ...mods, [modId]: { modStr, index: i + (lo == "" ? 0 : 1) } });
+                }
             }
-        }
+
+            nStageFn(parts, { ...mods, [modId]: null });
+        };
     }
 
-    return new Set([...longBaseUnits.keys(), ...shortBaseUnits.keys(), ...lowercaseShortBaseUnits.keys(), ...longModifiedUnits.keys(), ...shortModifiedUnits.keys()]);
+    let parseScale: ParserStage;
+    let parseLight: ParserStage;
+    let parseSqOrCb: ParserStage;
+    let parseDisp: ParserStage;
+
+    function parseBaseUnit(parts: string[], mods: Record<string, { modStr: string, index: number } | null>) {
+        const words = parts.flatMap(p => p.split("_")).filter(w => w != "").join("_");
+    }
+
+    parseDisp = buildParserStage("disp", "light", /disp(?:_?[Hh]2[Oo0]|[Hh]g)?|(?:[Hh]2[Oo0]|[Hh]g)(?:_?disp)?/g, (lo, _hi) => lo != "", parseBaseUnit);
+    parseSqOrCb = buildParserStage("sqOrCb", null, /sq|cb/g, (lo, hi) => lo != "" || hi != "", parseDisp);
+    parseLight = buildParserStage("light", null, /l/g, (_lo, hi) => hi.match(/^[a-zA-Z]/) !== null, parseSqOrCb);
+    parseScale = buildParserStage("scale", null, scaleRegExp, (_lo, hi) => hi.match(/^[a-zA-Z]/) !== null, parseLight);
+
+    parseScale([shortUnit], {});
 }
+
+// Long unit normalization:
+// 1. normalize to NFC
+// 2. lowercase
+
+// Long unit matching rules:
+// 1. plurals and different accent forms are accounted for
+// 2. any combination of "of"s can be removed
+// 3. words can be in any order
+// 4. any combination of underscores can be removed
+
+// Long unit modifier rules:
+// 1. the long or lowercase short base unit may be used
+// 2. long SI prefixes may be inserted before any word (but not after the last word)
+// 3. short SI prefixes may be inserted before any word (but not after the last word)
+// 4. for times, "light" or "l" may be inserted before any word (but not after the last word)
+// 5. for lengths, "square", "squared", "sq", "cube", "cubed", "cubic", or "cb" may be inserted at any position
+// 6. for lengths, "[of] mercury" or "[of] hg" may be inserted at any position
+// 7. for lengths, masses, weights/forces, or volumes, "[of] water" or "[of] h2o" may be inserted at any position
+// 8. for masses, weights/forces, or volumes, "[of] displacement", "[of] disp", "[of] water displacement", "[of] water disp", "[of] h2o displacement", or "[of] h20 disp" may be inserted at any position
+
+// Short unit normalization:
+// 1. normalize to NFC
+
+// Short unit matching rules:
+// 1. parts separated by underscores can be in any order
+// 2. any combination of underscores can be removed
+// 3. any combination of uppercase letters can be lowercased
+
+// Short unit modifier rules:
+// 1. the short or lowercase short base unit may be used
+// 2. short SI prefixes may be inserted before any word (but not after the last word)
+// 3. for times, "l" may be inserted before any word (but not after the last word)
+// 4. for lengths, "sq" or "cb" may be inserted at any position
+// 5. for lengths, "Hg" or "hg" may be inserted after any word (but not before the first word)
+// 6. for lengths, masses, weights/forces, or volumes, "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
+// 7. for masses, weights/forces, or volumes, "disp" may be inserted after any word (but not before the first word)
+
+// function buildAliasLongForms(aliasProps: UnitProps | Exclude<UnitProps["aliases"], undefined>[number]): Set<string> {
+//     const id = aliasProps.id;
+
+//     if (id != id.normalize("NFC").toLowerCase()) {
+//         throw new Error(id);
+//     }
+
+//     // 1. plurals and different accent forms are accounted for
+
+//     let inOrderForms = aliasProps.plurals === undefined ? [[...id], [...id, "s"]] : [id, ...aliasProps.plurals].map((form) => [...form]);
+
+//     for (const accent of aliasProps.accents ?? []) {
+//         inOrderForms = inOrderForms.concat(inOrderForms.map((form) => [
+//             ...form.slice(0, accent.index),
+//             accent.unicode,
+//             ...form.slice(accent.index + 1)
+//         ]));
+//     }
+
+//     const splitInOrderForms = inOrderForms.map((form) => form.join("").split("_"));
+
+//     // 2. any combination of "of"s can be removed
+
+//     const withoutOfForms = splitInOrderForms.flatMap((form) => combinationsWithout(form, "of"));
+
+//     // 3. words can be in any order
+
+//     const outOfOrderForms = withoutOfForms.flatMap((form) => orderings(form));
+
+//     const splicedForms = outOfOrderForms.map((form) => form.length == 0 ? [] : [form[0], ...form.slice(1).flatMap((word) => ["_", word])]);
+
+//     // 4. any combination of underscores can be removed
+
+//     const withoutUnderscoreForms = splicedForms.flatMap((form) => combinationsWithout(form, "_"));
+
+//     return new Set(withoutUnderscoreForms.map((form) => form.join("")));
+// }
+
+// function buildUnitLongForms(unitProps: UnitProps): Set<string> {
+//     const forms: Set<string> = new Set();
+
+//     for (const alias of [unitProps, ...(unitProps.aliases ?? [])]) {
+//         for (const form of buildAliasLongForms(alias)) {
+//             forms.add(form);
+//         }
+//     }
+
+//     return forms;
+// }
+
+// type Mod = "si_prefix" | "light" | "square" | "cubic" | "of_mercury" | "of_water" | "of_displacement" | "of_weight" | "of_mass";
+// type ModifiedForms = Map<string, { mods: Mod[], dimension: string }>;
+
+// // todo: make these invoke dimensionally-correct functions instead of being hardcoded
+// const MOD_DIMENSION_CHANGES: { [mod in Mod]?: { [dimension: string]: string } } = {
+//     "light": {
+//         "time": "length"
+//     },
+//     "square": {
+//         "length": "area"
+//     },
+//     "cubic": {
+//         "length": "volume"
+//     },
+//     "of_mercury": {
+//         "length": "pressure"
+//     },
+//     "of_water": {
+//         "length": "pressure",
+//         "mass": "volume",
+//         "force": "volume",
+//         "volume": "mass"
+//     },
+//     "of_displacement": {
+//         "mass": "volume",
+//         "force": "volume",
+//         "volume": "mass"
+//     },
+//     "of_weight": {
+//         "mass": "force"
+//     },
+//     "of_mass": {
+//         "force": "mass"
+//     }
+// };
+
+// function insertModifiersInner(before: boolean, after: boolean, forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
+//     const modForms: ModifiedForms = new Map();
+
+//     function insertModForm(form: string, mods: Mod[], dimension: string) {
+//         const foundForm = modForms.get(form);
+//         if (foundForm !== undefined) {
+//             if (foundForm.mods.join(",") != mods.join(",") || foundForm.dimension != dimension) {
+//                 console.log("MOD CONFLICT", form, mods, dimension);
+//             }
+//         } else {
+//             modForms.set(form, { mods, dimension });
+//         }
+//     }
+
+//     for (const [form, { mods: formMods, dimension }] of forms) {
+//         insertModForm(form, formMods, dimension);
+
+//         if (dimensions !== undefined && !dimensions.includes(dimension)) continue;
+//         if (mutExMods !== undefined && formMods.some(m => mutExMods.includes(m))) continue;
+
+//         for (const [modStr, mod] of mods) {
+//             const nFormMods = formMods.concat([mod]).sort();
+//             const nDimension = (MOD_DIMENSION_CHANGES[mod] ?? {})[dimension] ?? dimension;
+
+//             if (before) {
+//                 insertModForm(modStr + form, nFormMods, nDimension);
+//                 if (after) insertModForm(modStr + "_" + form, nFormMods, nDimension);
+//             }
+
+//             for (const { index } of form.matchAll(/_/g)) {
+//                 const lo = form.slice(0, index);
+//                 const hi = form.slice(index + 1);
+
+//                 if (after) insertModForm(lo + "_" + modStr + "_" + hi, nFormMods, nDimension);
+//                 insertModForm(lo + "_" + modStr + hi, nFormMods, nDimension);
+//                 if (after) insertModForm(lo + modStr + "_" + hi, nFormMods, nDimension);
+//                 insertModForm(lo + modStr + hi, nFormMods, nDimension);
+//             }
+
+//             if (after) {
+//                 insertModForm(form + modStr, nFormMods, nDimension);
+//                 insertModForm(form + "_" + modStr, nFormMods, nDimension);
+//             }
+//         }
+//     }
+
+//     return modForms;
+// }
+
+// function insertModifiersBefore(forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
+//     return insertModifiersInner(true, false, forms, mods, dimensions, mutExMods);
+// }
+
+// function insertModifiers(forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
+//     return insertModifiersInner(true, true, forms, mods, dimensions, mutExMods);
+// }
+
+// function insertModifiersAfter(forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
+//     return insertModifiersInner(false, true, forms, mods, dimensions, mutExMods);
+// }
+
+// function buildLongModifierForms(baseForms: string[], unitProps: UnitProps): ModifiedForms {
+//     let forms: ModifiedForms = new Map(baseForms.map(f => [f, { mods: [], dimension: unitProps.quantity }]));
+
+//     // 2. long SI prefixes may be inserted before any word (but not after the last word)
+//     // 3. short SI prefixes may be inserted before any word (but not after the last word)
+
+//     forms = insertModifiersBefore(forms, new Map([
+//         ...Object.keys(SI_PREFIXES_LONG).flatMap((modStr) => [modStr, modStr + "_"]),
+//         ...Object.keys(SI_PREFIXES_SHORT).filter((modStr) => modStr == modStr.toLowerCase())
+//     ].map((modStr) => [modStr, "si_prefix"])));
+
+//     // 4. for times, "light" or "l" may be inserted before any word (but not after the last word)
+
+//     forms = insertModifiersBefore(forms, new Map(["light", "light_", "l"].map((modStr) => [modStr, "light"])), ["time"]);
+
+//     // 5. for lengths, "square", "squared", "sq", "cube", "cubed", "cubic", or "cb" may be inserted at any position
+//     // 6. for lengths, "[of] mercury" or "[of] hg" may be inserted at any position
+
+//     forms = insertModifiers(forms, new Map([
+//         ...["square", "squared", "sq"].map((modStr): [string, Mod] => [modStr, "square"]),
+//         ...["cube", "cubed", "cubic", "cb"].map((modStr): [string, Mod] => [modStr, "cubic"]),
+//         ...["of_mercury", "ofmercury", "mercury", "of_hg", "ofhg", "hg"].map((modStr): [string, Mod] => [modStr, "of_mercury"]),
+//     ]), ["length"]);
+
+//     // 9. for masses, "[of] weight", "[of] wght", "[of] wgt", "[of] wt", "[of] w", "[of] force", or "[of] f" may be inserted at any position
+
+//     forms = insertModifiers(forms, new Map([
+//         "of_weight", "ofweight", "weight",
+//         "of_wght", "ofwght", "wght",
+//         "of_wgt", "ofwgt", "wgt",
+//         "of_wt", "ofwt", "wt",
+//         "of_w", "ofw", "w",
+//         "of_force", "offorce", "force",
+//         "of_f", "off", "f"
+//     ].map((modStr) => [modStr, "of_weight"])), ["mass"]);
+
+//     // 10. for weights/forces, "[of] mass" may be inserted at any position
+
+//     forms = insertModifiers(forms, new Map(["of_mass", "ofmass", "mass"].map((modStr) => [modStr, "of_mass"])), ["force"], ["of_weight"]);
+
+//     // 7. for lengths, masses, weights/forces, or volumes, "[of] water" or "[of] h2o" may be inserted at any position
+
+//     forms = insertModifiers(forms, new Map(["of_water", "ofwater", "water", "of_h2o", "ofh2o", "h2o"].map((modStr) => [modStr, "of_water"])), ["length", "mass", "force", "volume"], ["of_weight", "of_mass"]);
+
+//     // 8. for masses, weights/forces, or volumes, "[of] displacement", "[of] disp", "[of] water displacement", "[of] water disp", "[of] h2o displacement", or "[of] h20 disp" may be inserted at any position
+
+//     forms = insertModifiers(forms, new Map([
+//         "of_displacement", "ofdisplacement", "displacement", "of_disp", "ofdisp", "disp",
+//         "of_water_displacement", "ofwater_displacement", "water_displacement", "of_water_disp", "ofwater_disp", "water_disp",
+//         "of_waterdisplacement", "ofwaterdisplacement", "waterdisplacement", "of_waterdisp", "ofwaterdisp", "waterdisp",
+//         "of_h2o_displacement", "ofh2o_displacement", "h2o_displacement", "of_h2o_disp", "ofh2o_disp", "h2o_disp",
+//         "of_h2odisplacement", "ofh2odisplacement", "h2odisplacement", "of_h2odisp", "ofh2odisp", "h2odisp"
+//     ].map((modStr) => [modStr, "of_displacement"])), ["length", "mass", "force", "volume"], ["of_weight", "of_mass", "of_water"]);
+
+//     return new Map([...forms].filter(([_, { mods, dimension: _dimension }]) => mods.length != 0));
+// }
+
+// function buildShortModifierForms(baseForms: string[], unitProps: UnitProps): ModifiedForms {
+//     let forms: ModifiedForms = new Map(baseForms.map(f => [f, { mods: [], dimension: unitProps.quantity }]));
+
+//     // 2. short SI prefixes may be inserted before any word (but not after the last word)
+
+//     forms = insertModifiersBefore(forms, new Map(Object.keys(SI_PREFIXES_SHORT).map((modStr) => [modStr, "si_prefix"])));
+
+//     // 3. for times, "l" may be inserted before any word (but not after the last word)
+
+//     forms = insertModifiersBefore(forms, new Map([["l", "light"]]), ["time"]);
+
+//     // 4. for lengths, "sq" or "cb" may be inserted at any position
+
+//     forms = insertModifiers(forms, new Map([
+//         ["sq", "square"],
+//         ["cb", "cubic"],
+//     ]), ["length"]);
+
+//     // 5. for lengths, "Hg" or "hg" may be inserted after any word (but not before the first word)
+
+//     forms = insertModifiersAfter(forms, new Map([
+//         ["Hg", "of_mercury"],
+//         ["hg", "of_mercury"],
+//     ]), ["length"]);
+
+//     // 8. for masses, "wght", "wgt", "wt", "w", or "f" may be inserted after any word (but not before the first word)
+
+//     forms = insertModifiersAfter(forms, new Map(["wght", "wgt", "wt", "w", "f"].map((modStr) => [modStr, "of_weight"])), ["mass"]);
+
+//     // 6. for lengths, masses, weights/forces, or volumes, "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
+
+//     forms = insertModifiers(forms, new Map(["H2O", "h2O", "H2o", "h2o"].map((modStr) => [modStr, "of_water"])), ["length", "mass", "force", "volume"], ["of_weight"]);
+
+//     // 7. for masses, weights/forces, or volumes, "disp" with optional pre- or post-fixed "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
+
+//     forms = insertModifiersAfter(forms, new Map([
+//         "disp",
+//         "dispH2O", "disph2O", "dispH2o", "disph2o",
+//         "disp_H2O", "disp_h2O", "disp_H2o", "disp_h2o",
+//         "H2Odisp", "h2Odisp", "H2odisp", "h2odisp",
+//         "H2O_disp", "h2O_disp", "H2o_disp", "h2o_disp",
+//     ].map((modStr) => [modStr, "of_displacement"])), ["length", "mass", "force", "volume"], ["of_weight", "of_water"]);
+
+//     return new Map([...forms].filter(([_, { mods, dimension: _dimension }]) => mods.length != 0));
+// }
+
+// export function buildUnitReference(): Set<string> {
+//     // 1. build all permutations of long names
+//     // 2. mix in short names
+//     // 3. take product with all permutations of prefixes
+//     // 4. resolve conflicts
+
+//     // 1. build long/short base units
+
+//     const longBaseUnits: Map<string, string> = new Map();
+//     const shortBaseUnits: Map<string, string> = new Map();
+//     const lowercaseShortBaseUnits: Map<string, string> = new Map();
+
+//     for (const unit of UNIT_PROPS) {
+//         for (const form of buildUnitLongForms(unit)) {
+//             if (longBaseUnits.has(form)) {
+//                 console.log("LONG CONTRADICTION: " + unit.id + " " + form);
+//             } else {
+//                 longBaseUnits.set(form, unit.id);
+//             }
+//         }
+
+//         for (const form of buildUnitShortForms(unit)) {
+//             if (longBaseUnits.has(form) && longBaseUnits.get(form) !== unit.id || shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id) {
+//                 console.log("SHORT CONTRADICTION: " + unit.id + " " + form);
+//             } else {
+//                 shortBaseUnits.set(form, unit.id);
+//             }
+//         }
+
+//         for (const form of buildUnitLowercaseShortForms(unit)) {
+//             if (longBaseUnits.has(form) && longBaseUnits.get(form) !== unit.id || shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id || lowercaseShortBaseUnits.has(form) && lowercaseShortBaseUnits.get(form) !== unit.id) {
+//                 console.log("lowercase short contradiction: " + unit.id + " " + form);
+//             } else {
+//                 lowercaseShortBaseUnits.set(form, unit.id);
+//             }
+//         }
+//     }
+
+//     // 2. add modifiers
+
+//     const longModifiedUnits: Map<string, { unitId: string, mods: Mod[], dimension: string }> = new Map();
+//     const shortModifiedUnits: Map<string, { unitId: string, mods: Mod[], dimension: string }> = new Map();
+
+//     for (const unit of [UNIT_PROPS[Math.floor(Math.random() * UNIT_PROPS.length)]]) {
+//         // for (const [form, { mods, dimension }] of buildLongModifierForms([...longBaseUnits, ...lowercaseShortBaseUnits].filter(([_, unitId]) => unitId == unit.id).map(([baseUnit, _]) => baseUnit), unit)) {
+//         //     if (longBaseUnits.has(form)) {
+//         //         console.log("modified long contradiction: " + unit.id + " " + form);
+//         //     } else {
+//         //         longModifiedUnits.set(form, { unitId: unit.id, mods, dimension });
+//         //     }
+//         // }
+
+//         for (const [form, { mods, dimension }] of buildShortModifierForms([...shortBaseUnits, ...lowercaseShortBaseUnits].filter(([_, unitId]) => unitId == unit.id).map(([baseUnit, _]) => baseUnit), unit)) {
+//             if (longBaseUnits.has(form) && longBaseUnits.get(form) !== unit.id || shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id || lowercaseShortBaseUnits.has(form) && lowercaseShortBaseUnits.get(form) !== unit.id || shortModifiedUnits.has(form) && shortModifiedUnits.get(form)!.unitId !== unit.id) {
+//                 console.log("modified short contradiction: " + unit.id + " " + form);
+//             } else {
+//                 shortModifiedUnits.set(form, { unitId: unit.id, mods, dimension });
+//             }
+//         }
+//     }
+
+//     return new Set([...longBaseUnits.keys(), ...shortBaseUnits.keys(), ...lowercaseShortBaseUnits.keys(), ...longModifiedUnits.keys(), ...shortModifiedUnits.keys()]);
+// }
 
 interface UnitlessUnit {
     readonly type: "unitless";

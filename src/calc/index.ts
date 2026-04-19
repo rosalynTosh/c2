@@ -1,5 +1,5 @@
 import { add, div, mod, mul, neg, Num, pow, simplify, sub } from "./numbers";
-import { buildUnitReference, Unit } from "./units";
+import { parseShortUnit, Unit } from "./units";
 
 interface BinOpAST {
     readonly type: "binOp";
@@ -69,7 +69,9 @@ export class CalcModule {
             if (event.code === "Enter" && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
                 const input = this.fpInput.value;
 
-                this.parseFp(input);
+                // this.parseFp(input);
+
+                parseShortUnit(input);
 
                 this.fpInput.value = "";
                 this.fpInput.parentElement!.dataset.copy = this.fpInput.value;
@@ -350,8 +352,6 @@ export class CalcModule {
                 throw new SyntaxError();
             }
         }
-
-        console.log(buildUnitReference());
 
         return parseBinOps1(groupingToks);
     }
