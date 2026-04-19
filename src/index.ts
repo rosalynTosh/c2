@@ -1,4 +1,4 @@
-import { CalcModule } from "./calc";
+import { CalcModule } from "./calc/index";
 import { ColorModule } from "./color";
 
 new ColorModule();
