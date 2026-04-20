@@ -1,5 +1,5 @@
 import { add, div, mod, mul, neg, Num, pow, simplify, sub } from "./numbers";
-import { parseShortUnit, Unit } from "./units";
+import { parseUnit, Unit } from "./units";
 
 interface BinOpAST {
     readonly type: "binOp";
@@ -71,7 +71,7 @@ export class CalcModule {
 
                 // this.parseFp(input);
 
-                parseShortUnit(input);
+                parseUnit(input);
 
                 this.fpInput.value = "";
                 this.fpInput.parentElement!.dataset.copy = this.fpInput.value;

@@ -19,8 +19,6 @@ type Quantity = (
     "proportion"
 );
 
-type System = "si" | "cgs" | "us" | "us_survey" | "nautical" | "imperial" | "troy";
-
 interface UnitWordPropsNoun {
     readonly type: "noun";
     readonly word: string;
@@ -40,21 +38,22 @@ type UnitWordProps = UnitWordPropsNoun | UnitWordPropsModifier;
 
 type UnitFormProps = ReadonlyArray<UnitWordProps>;
 
+interface UnitDisambiguatorProps {
+    readonly system: string;
+    readonly systemForms: ReadonlyArray<UnitFormProps>;
+    readonly shortSystemForms?: ReadonlyArray<UnitFormProps>;
+}
+
 interface UnitProps {
     readonly id: string;
 
-    readonly quantity: Quantity; // used to differentiate units with the same name
-    readonly system?: System; // used to differentiate units with the same name
+    readonly quantity: Quantity;
 
-    readonly quantityForms?: ReadonlyArray<UnitFormProps>;
-    readonly shortQuantityForms?: ReadonlyArray<UnitFormProps>;
-
-    readonly systemForms?: ReadonlyArray<UnitFormProps>;
-    readonly shortSystemForms?: ReadonlyArray<UnitFormProps>;
+    readonly disambiguators?: Readonly<Record<string, UnitDisambiguatorProps>>; // used to differentiate units with the same name
 
     readonly forms: ReadonlyArray<UnitFormProps>;
     readonly shortForms?: ReadonlyArray<UnitFormProps>;
-    readonly rawShortForms?: ReadonlyArray<UnitFormProps>; // no quantity or system forms
+    readonly rawShortForms?: ReadonlyArray<UnitFormProps>; // no disambiguators
 }
 
 function noun(word: string, options?: Partial<UnitWordPropsNoun>): UnitWordProps {
@@ -86,61 +85,110 @@ function simpleForms(formWords: string[]): UnitFormProps[] {
 }
 
 const US_LAND_SYSTEM = {
-    system: "us",
-
-    systemForms: [[modifier("united_states"), modifier("statutory"), modifier("statute"), modifier("international"), modifier("land")]],
-    shortSystemForms: [[modifier("US"), modifier("us"), modifier("stat"), modifier("intl"), modifier("int"), modifier("land")]],
-} as const satisfies Partial<UnitProps>;
+    distance: {
+        system: "us_land",
+        systemForms: [[modifier("united_states"), modifier("statutory"), modifier("statute"), modifier("international"), modifier("land")]],
+        shortSystemForms: [[modifier("US"), modifier("us"), modifier("stat"), modifier("intl"), modifier("int"), modifier("land")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
 const NAUTICAL_SYSTEM = {
-    system: "nautical",
-
-    systemForms: [[modifier("nautical")]],
-    shortSystemForms: [[modifier("naut"), modifier("n")]],
-} as const satisfies Partial<UnitProps>;
+    distance: {
+        system: "nautical",
+        systemForms: [[modifier("nautical")]],
+        shortSystemForms: [[modifier("naut"), modifier("n")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
 const US_VOLUME_SYSTEM = {
-    system: "us",
-
-    systemForms: [[modifier("united_states"), modifier("customary")]],
-    shortSystemForms: [[modifier("US"), modifier("us"), modifier("cust")]],
-} as const satisfies Partial<UnitProps>;
+    volume: {
+        system: "us",
+        systemForms: [[modifier("united_states"), modifier("customary")]],
+        shortSystemForms: [[modifier("US"), modifier("us"), modifier("cust")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
 const IMPERIAL_VOLUME_SYSTEM = {
-    system: "imperial",
+    volume: {
+        system: "imperial",
+        systemForms: [[modifier("imperial")]],
+        shortSystemForms: [[modifier("imp")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
-    systemForms: [[modifier("imperial")]],
-    shortSystemForms: [[modifier("imp")]],
-} as const satisfies Partial<UnitProps>;
+const TROY_WEIGHT_SYSTEM = {
+    weight: {
+        system: "troy",
+        systemForms: [[modifier("troy")]],
+        shortSystemForms: [[modifier("tr")], [modifier("t")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
-const TROY_MASS_SYSTEM = {
-    system: "troy",
+const US_WEIGHT_SYSTEM = {
+    weight: {
+        system: "us",
+        systemForms: [[modifier("united_states"), modifier("international"), modifier("avoirdupois")]],
+        shortSystemForms: [[modifier("US"), modifier("us"), modifier("intl"), modifier("int"), modifier("av")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
-    systemForms: [[modifier("troy")]],
-    shortSystemForms: [[modifier("tr")], [modifier("t")]],
-} as const satisfies Partial<UnitProps>;
+const MASS_QUANTITY_SYSTEM = {
+    quantity: {
+        system: "mass",
+        systemForms: [[modifier("mass")]],
+        shortSystemForms: [[modifier("m")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
-const US_MASS_QUANTITY_SYSTEM = {
-    quantity: "mass",
-    system: "us",
+const WEIGHT_FORCE_QUANTITY_SYSTEM = {
+    quantity: {
+        system: "force",
+        systemForms: [[modifier("weight")], [modifier("force")]],
+        shortSystemForms: [[modifier("wght")], [modifier("wgt")], [modifier("wt")], [modifier("wt")], [modifier("w")], [modifier("f")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
-    quantityForms: [[modifier("mass")]],
-    shortQuantityForms: [[modifier("m")]],
+const FLUID_OUNCE_QUANTITY_SYSTEM = {
+    quantity: {
+        system: "volume",
+        systemForms: [[modifier("fluid")]],
+        shortSystemForms: [[modifier("fl")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
-    systemForms: [[modifier("avoirdupois")]],
-    shortSystemForms: [[modifier("av")]],
-} as const satisfies Partial<UnitProps>;
+const SHORT_TON_SYSTEM = {
+    quantity: {
+        system: "ton",
+        systemForms: [[modifier("short")]],
+        shortSystemForms: [[modifier("sh")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
-const US_WEIGHT_QUANTITY_SYSTEM = {
-    quantity: "force",
-    system: "us",
+const LONG_TON_SYSTEM = {
+    quantity: {
+        system: "ton",
+        systemForms: [[modifier("long")]],
+        shortSystemForms: [[modifier("long")]],
+    },
+} as const satisfies Partial<UnitProps["disambiguators"]>;
 
-    quantityForms: [[modifier("weight")], [modifier("force")]],
-    shortQuantityForms: [[modifier("wght")], [modifier("wgt")], [modifier("wt")], [modifier("wt")], [modifier("w")], [modifier("f")]],
-
-    systemForms: [[modifier("avoirdupois")]],
-    shortSystemForms: [[modifier("av")]],
-} as const satisfies Partial<UnitProps>;
+// calendar systems:
+// month: 30 days, 29 days, lunar (synodic), OR year divided by 12
+// year: 365 days, 366 days, 365.25 days (julian), 365.2425 days (gregorian), mean tropical, sidereal, OR month times 12 (which is 360 days, 348 days, or 12 synodic months)
+// calendar systems (always 12 months / year):
+// - common: 365 days / year
+// - leap: 366 days / year
+// - julian: 365.25 days / year
+// - gregorian: 365.2425 days / year
+// - mean_tropical: precise days / year
+// - sidereal: precise days / year
+// - synodic: precise days / year
+// - month systems (overrides month but not year):
+// - full_month: 30 days / month
+// - hollow_month: 29 days / month
+// - short_month: 28 days / month
+// - long_month: 31 days / month
+// - synodic_month: precise days / month
 
 const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     // length
@@ -223,7 +271,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "mile",
 
         quantity: "length",
-        ...US_LAND_SYSTEM,
+
+        disambiguators: {
+            ...US_LAND_SYSTEM,
+        },
 
         forms: simpleForms(["mile"]),
         shortForms: simpleForms(["mi"]),
@@ -240,7 +291,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "league",
 
         quantity: "length",
-        ...US_LAND_SYSTEM,
+
+        disambiguators: {
+            ...US_LAND_SYSTEM,
+        },
 
         forms: simpleForms(["league"]),
         shortForms: simpleForms(["lea"]),
@@ -249,7 +303,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "nautical_mile",
 
         quantity: "length",
-        ...NAUTICAL_SYSTEM,
+
+        disambiguators: {
+            ...NAUTICAL_SYSTEM,
+        },
 
         forms: [[noun("mile")]],
         shortForms: simpleForms(["mi"]),
@@ -259,7 +316,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "nautical_league",
 
         quantity: "length",
-        ...NAUTICAL_SYSTEM,
+
+        disambiguators: {
+            ...NAUTICAL_SYSTEM,
+        },
 
         forms: [[noun("league")]],
         shortForms: simpleForms(["lea"]),
@@ -374,7 +434,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "us_gallon",
 
         quantity: "volume",
-        ...US_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...US_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["gallon"]),
         shortForms: simpleForms(["gal", "gals"]),
@@ -383,7 +446,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "us_quart",
 
         quantity: "volume",
-        ...US_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...US_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["quart"]),
         shortForms: simpleForms(["qt", "qts"]),
@@ -392,7 +458,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "us_pint",
 
         quantity: "volume",
-        ...US_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...US_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["pint"]),
         shortForms: simpleForms(["pt", "pts"]),
@@ -401,7 +470,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "us_cup",
 
         quantity: "volume",
-        ...US_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...US_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["cup"]),
         shortForms: simpleForms(["c", "cup", "cups"]),
@@ -410,10 +482,11 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "us_fluid_ounce",
 
         quantity: "volume",
-        ...US_VOLUME_SYSTEM,
 
-        quantityForms: simpleForms(["fluid"]),
-        shortQuantityForms: simpleForms(["fl"]),
+        disambiguators: {
+            ...FLUID_OUNCE_QUANTITY_SYSTEM,
+            ...US_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["ounce"]),
         shortForms: simpleForms(["oz", "ozs"]),
@@ -422,7 +495,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "us_tablespoon",
 
         quantity: "volume",
-        ...US_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...US_VOLUME_SYSTEM,
+        },
 
         forms: [[modifier("table"), noun("spoon")]],
         shortForms: simpleForms(["tbsp", "tbsps"]),
@@ -431,7 +507,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "us_teaspoon",
 
         quantity: "volume",
-        ...US_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...US_VOLUME_SYSTEM,
+        },
 
         forms: [[modifier("tea"), noun("spoon")]],
         shortForms: simpleForms(["tsp", "tsps"]),
@@ -440,7 +519,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "imperial_gallon",
 
         quantity: "volume",
-        ...IMPERIAL_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...IMPERIAL_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["gallon"]),
         shortForms: simpleForms(["gal", "gals"]),
@@ -449,7 +531,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "imperial_quart",
 
         quantity: "volume",
-        ...IMPERIAL_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...IMPERIAL_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["quart"]),
         shortForms: simpleForms(["qt", "qts"]),
@@ -458,7 +543,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "imperial_pint",
 
         quantity: "volume",
-        ...IMPERIAL_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...IMPERIAL_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["pint"]),
         shortForms: simpleForms(["pt", "pts"]),
@@ -467,7 +555,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "imperial_cup",
 
         quantity: "volume",
-        ...IMPERIAL_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...IMPERIAL_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["cup"]),
         shortForms: simpleForms(["c", "cup", "cups"]),
@@ -476,10 +567,11 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "imperial_fluid_ounce",
 
         quantity: "volume",
-        ...IMPERIAL_VOLUME_SYSTEM,
 
-        quantityForms: simpleForms(["fluid"]),
-        shortQuantityForms: simpleForms(["fl"]),
+        disambiguators: {
+            ...FLUID_OUNCE_QUANTITY_SYSTEM,
+            ...IMPERIAL_VOLUME_SYSTEM,
+        },
 
         forms: simpleForms(["ounce"]),
         shortForms: simpleForms(["oz", "ozs"]),
@@ -488,7 +580,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "imperial_tablespoon",
 
         quantity: "volume",
-        ...IMPERIAL_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...IMPERIAL_VOLUME_SYSTEM,
+        },
 
         forms: [[modifier("table"), noun("spoon")]],
         shortForms: simpleForms(["tbsp", "tbsps"]),
@@ -497,7 +592,10 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "imperial_teaspoon",
 
         quantity: "volume",
-        ...IMPERIAL_VOLUME_SYSTEM,
+
+        disambiguators: {
+            ...IMPERIAL_VOLUME_SYSTEM,
+        },
 
         forms: [[modifier("tea"), noun("spoon")]],
         shortForms: simpleForms(["tsp", "tsps"]),
@@ -624,9 +722,13 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "metric_ton",
 
         quantity: "mass",
-        system: "si",
 
-        systemForms: simpleForms(["metric"]),
+        disambiguators: {
+            ton: {
+                system: "si",
+                systemForms: simpleForms(["metric"]),
+            },
+        },
 
         forms: simpleForms(["ton", "tonne"]),
         shortForms: simpleForms(["t"]),
@@ -634,7 +736,12 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     {
         id: "ounce_mass",
 
-        ...US_MASS_QUANTITY_SYSTEM,
+        quantity: "mass",
+
+        disambiguators: {
+            ...MASS_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["ounce"]),
         shortForms: simpleForms(["oz", "ozs"]),
@@ -642,7 +749,12 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     {
         id: "pound_mass",
 
-        ...US_MASS_QUANTITY_SYSTEM,
+        quantity: "mass",
+
+        disambiguators: {
+            ...MASS_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["pound"]),
         shortForms: simpleForms(["lb", "lbs"]),
@@ -650,7 +762,12 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     {
         id: "stone_mass",
 
-        ...US_MASS_QUANTITY_SYSTEM,
+        quantity: "mass",
+
+        disambiguators: {
+            ...MASS_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["stone"]),
         shortForms: simpleForms(["st"]),
@@ -658,24 +775,40 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     {
         id: "short_ton_mass",
 
-        ...US_MASS_QUANTITY_SYSTEM,
+        quantity: "mass",
 
-        forms: [[noun("ton")], [modifier("short"), modifier("ton")]],
-        shortForms: [[noun("tn")], [modifier("sh"), modifier("tn")]],
+        disambiguators: {
+            ...MASS_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+            ...SHORT_TON_SYSTEM,
+        },
+
+        forms: [[noun("ton")]],
+        shortForms: [[noun("tn")]],
     },
     {
         id: "long_ton_mass",
 
-        ...US_MASS_QUANTITY_SYSTEM,
+        quantity: "mass",
 
-        forms: [[modifier("long"), modifier("ton")]],
-        shortForms: [[modifier("long"), modifier("tn")]],
+        disambiguators: {
+            ...MASS_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+            ...LONG_TON_SYSTEM,
+        },
+
+        forms: [[modifier("ton")]],
+        shortForms: [[modifier("tn")]],
     },
     {
         id: "grain",
 
         quantity: "mass",
-        ...TROY_MASS_SYSTEM,
+
+        disambiguators: {
+            ...MASS_QUANTITY_SYSTEM,
+            ...TROY_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["grain"]),
         shortForms: simpleForms(["gr"]),
@@ -684,7 +817,11 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "pennyweight",
 
         quantity: "mass",
-        ...TROY_MASS_SYSTEM,
+
+        disambiguators: {
+            ...MASS_QUANTITY_SYSTEM,
+            ...TROY_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["pennyweight"]),
         shortForms: simpleForms(["dwt", "dwts", "pwt", "pwts"]),
@@ -693,7 +830,11 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "troy_ounce",
 
         quantity: "mass",
-        ...TROY_MASS_SYSTEM,
+
+        disambiguators: {
+            ...MASS_QUANTITY_SYSTEM,
+            ...TROY_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["ounce"]),
         shortForms: simpleForms(["oz", "ozs"]),
@@ -702,7 +843,11 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         id: "troy_pound",
 
         quantity: "mass",
-        ...TROY_MASS_SYSTEM,
+
+        disambiguators: {
+            ...MASS_QUANTITY_SYSTEM,
+            ...TROY_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["pound"]),
         shortForms: simpleForms(["lb", "lbs"]),
@@ -875,7 +1020,12 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     {
         id: "ounce",
 
-        ...US_WEIGHT_QUANTITY_SYSTEM,
+        quantity: "force",
+
+        disambiguators: {
+            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["ounce"]),
         shortForms: simpleForms(["oz", "ozs"]),
@@ -883,7 +1033,12 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     {
         id: "pound",
 
-        ...US_WEIGHT_QUANTITY_SYSTEM,
+        quantity: "force",
+
+        disambiguators: {
+            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["pound"]),
         shortForms: simpleForms(["lb", "lbs"]),
@@ -891,7 +1046,12 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     {
         id: "stone",
 
-        ...US_WEIGHT_QUANTITY_SYSTEM,
+        quantity: "force",
+
+        disambiguators: {
+            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+        },
 
         forms: simpleForms(["stone"]),
         shortForms: simpleForms(["st"]),
@@ -899,18 +1059,30 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     {
         id: "short_ton",
 
-        ...US_WEIGHT_QUANTITY_SYSTEM,
+        quantity: "force",
 
-        forms: [[noun("ton")], [modifier("short"), modifier("ton")]],
-        shortForms: [[noun("tn")], [modifier("sh"), modifier("tn")]],
+        disambiguators: {
+            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+            ...SHORT_TON_SYSTEM,
+        },
+
+        forms: [[noun("ton")]],
+        shortForms: [[noun("tn")]],
     },
     {
         id: "long_ton",
 
-        ...US_WEIGHT_QUANTITY_SYSTEM,
+        quantity: "force",
 
-        forms: [[modifier("long"), modifier("ton")]],
-        shortForms: [[modifier("long"), modifier("tn")]],
+        disambiguators: {
+            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
+            ...US_WEIGHT_SYSTEM,
+            ...LONG_TON_SYSTEM,
+        },
+
+        forms: [[modifier("ton")]],
+        shortForms: [[modifier("tn")]],
     },
     {
         id: "poundal",
@@ -1135,7 +1307,7 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         quantity: "temperature",
 
-        forms: [[noun("kelvin")], [noun("degree"), modifier("celsius")]],
+        forms: [[noun("kelvin")], [noun("degree"), modifier("kelvin")]],
         shortForms: simpleForms(["K", "°K"]),
     },
 
@@ -1471,41 +1643,94 @@ function combinationsWithout<T>(array: T[], without: T): T[][] {
     return combinations(indices).map((comb) => array.filter((_, i) => !comb.includes(i)));
 }
 
-function buildShortForms(id: string): Set<string> {
-    if (id != id.normalize("NFC")) {
-        throw new Error(id);
+function cartProd<T>(opts: T[][]): T[][] {
+    if (opts.length == 0) return [[]];
+
+    const nProd = cartProd(opts.slice(1));
+
+    let prod: T[][] = [];
+    for (const opt of opts[0]) {
+        prod = prod.concat(nProd.map(p => [opt, ...p]));
     }
 
-    // 1. parts separated by underscores can be in any order
-
-    const words = id.split("_");
-    const outOfOrderForms = orderings(words);
-
-    // 2. any combination of underscores can be removed
-
-    const splicedForms = outOfOrderForms.map((form) => form.length == 0 ? [] : [form[0], ...form.slice(1).flatMap((word) => ["_", word])]);
-    const withoutUnderscoreForms = splicedForms.flatMap((form) => combinationsWithout(form, "_")).map((form) => form.join(""));
-
-    return new Set(withoutUnderscoreForms);
+    return prod;
 }
 
-function buildUnitShortForms(unitProps: UnitProps): Set<string> {
-    const forms: Set<string> = new Set();
+function buildWordForms(wordProps: UnitWordProps, isShort: boolean): string[][] {
+    const { type, word, accents, plurals } = wordProps;
 
-    for (const shortFormId of unitProps.shortForms ?? []) {
-        for (const form of buildShortForms(shortFormId)) {
-            forms.add(form);
+    let forms = plurals === undefined ? type == "noun" && !isShort ? [word, word + "s"] : [word] : [word, ...plurals];
+
+    for (const accent of accents ?? []) {
+        forms = forms.concat(forms.map((form) => [...form]).map((form) => [
+            ...form.slice(0, accent.index),
+            accent.unicode,
+            ...form.slice(accent.index + 1)
+        ].join("")));
+    }
+    
+    return wordProps.type == "modifier" && wordProps.isOf ? forms.map((form) => ["of", form]) : forms.map((form) => [form]);
+}
+
+function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
+    let combSplitForms: { splitForm: string[][], lowercases: number }[] = [];
+
+    for (const formProps of unitProps.forms) {
+        // 1. plurals and different accent forms are accounted for
+        // 2. any combination of "of"s can be removed
+
+        const opts = formProps.map((word) => buildWordForms(word, false));
+        const splitForms = cartProd(opts);
+
+        combSplitForms = combSplitForms.concat(splitForms.map((splitForm) => ({ splitForm, lowercases: 0 })));
+    }
+
+    for (const shortFormProps of unitProps.shortForms ?? []) {
+        const opts = shortFormProps.map((word) => buildWordForms(word, true));
+        const splitForms = cartProd(opts);
+
+        // lowercase
+
+        // concat to combSplitForms
+    }
+
+    // add long and short disambiguators
+
+    // 3/1. words can be in any order
+
+    const outOfOrderSplitForms = combSplitForms.flatMap(({ splitForm, lowercases }) => orderings(splitForm).flatMap((ord) => ({ splitForm: ord, lowercases })));
+
+    // 4/2. any combination of underscores can be removed
+
+    const splicedForms = outOfOrderSplitForms.map(({ splitForm, lowercases }) => ({ splitForm: splitForm.length == 0 ? [] : [splitForm[0], ...splitForm.slice(1).flatMap((word) => ["_", word])], lowercases }));
+    const withoutUnderscoreForms = splicedForms.flatMap(({ splitForm, lowercases }) => combinationsWithout(splitForm, "_").map((comb): [string, { lowercases: number }] => [comb.join("_"), { lowercases }]));
+
+    const forms: Map<string, { lowercases: number }> = new Map();
+
+    for (const [form, { lowercases }] of withoutUnderscoreForms) {
+        const curr = forms.get(form);
+
+        if (curr === undefined) {
+            forms.set(form, { lowercases });
+        } else {
+            curr.lowercases = Math.min(curr.lowercases, lowercases);
         }
     }
 
     return forms;
 }
 
-function buildLowercaseShortForms(id: string): Set<string> {
-    // 3. any combination of uppercase letters can be lowercased
+function buildLongForms(unitProps: UnitProps): Set<string> {
+    return buildForms(unitProps.forms, false);
+}
 
+function buildShortForms(unitProps: UnitProps): Set<string> {
+    return buildForms(unitProps.shortForms ?? [], true);
+}
+
+function buildLowercaseShortForms(unitProps: UnitProps): Set<string> {
     const lowercaseForms: Set<string> = new Set();
-    for (const shortForm of buildShortForms(id)) {
+    for (const shortForm of buildShortForms(unitProps)) {
         const formChars = [...shortForm];
 
         const uppercaseIndices = [...formChars.keys()].filter((i) => formChars[i] != formChars[i].toLowerCase());
@@ -1520,44 +1745,43 @@ function buildLowercaseShortForms(id: string): Set<string> {
     return lowercaseForms;
 }
 
-function buildUnitLowercaseShortForms(unitProps: UnitProps): Set<string> {
-    const forms: Set<string> = new Set();
-
-    for (const shortFormId of unitProps.shortForms ?? []) {
-        for (const form of buildLowercaseShortForms(shortFormId)) {
-            forms.add(form);
-        }
-    }
-
-    return forms;
-}
-
-function buildShortUnitReference() {
-    const shortBaseUnits: Map<string, string> = new Map();
-    const lowercaseShortBaseUnits: Map<string, string> = new Map();
+export function buildUnitReference(): Set<string> {
+    const long: Map<string, string> = new Map();
+    const short: Map<string, string> = new Map();
+    const lowercaseShort: Map<string, string> = new Map();
 
     for (const unit of UNIT_PROPS) {
-        for (const form of buildUnitShortForms(unit)) {
-            if (shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id) {
-                console.log("SHORT CONTRADICTION: " + unit.id + " " + form);
+        for (const form of buildLongForms(unit)) {
+            if (long.has(form)) {
+                console.log("LONG CONTRADICTION: " + unit.id + " " + form);
             } else {
-                shortBaseUnits.set(form, unit.id);
+                long.set(form, unit.id);
             }
         }
 
-        for (const form of buildUnitLowercaseShortForms(unit)) {
-            if (shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id || lowercaseShortBaseUnits.has(form) && lowercaseShortBaseUnits.get(form) !== unit.id) {
+        for (const form of buildShortForms(unit)) {
+            if (long.has(form) && long.get(form) !== unit.id || short.has(form) && short.get(form) !== unit.id) {
+                console.log("SHORT CONTRADICTION: " + unit.id + " " + form);
+            } else {
+                short.set(form, unit.id);
+            }
+        }
+
+        for (const form of buildLowercaseShortForms(unit)) {
+            if (long.has(form) && long.get(form) !== unit.id || short.has(form) && short.get(form) !== unit.id || lowercaseShort.has(form) && lowercaseShort.get(form) !== unit.id) {
                 console.log("lowercase short contradiction: " + unit.id + " " + form);
             } else {
-                lowercaseShortBaseUnits.set(form, unit.id);
+                lowercaseShort.set(form, unit.id);
             }
         }
     }
+
+    return new Set([...long.keys(), ...short.keys(), ...lowercaseShort.keys()]);
 }
 
 const scaleRegExp = new RegExp([...Object.keys(SI_PREFIXES_SHORT), ...Object.keys(BINARY_PREFIXES_SHORT)].join("|"), "g");
 
-export function parseShortUnit(shortUnit: string) {
+export function parseUnit(shortUnit: string) {
     shortUnit = shortUnit.normalize("NFC");
 
     type ParserStage = (parts: string[], mods: Record<string, { modStr: string, index: number } | null>) => void;
@@ -1597,11 +1821,13 @@ export function parseShortUnit(shortUnit: string) {
 
     function parseBaseUnit(parts: string[], mods: Record<string, { modStr: string, index: number } | null>) {
         const words = parts.flatMap(p => p.split("_")).filter(w => w != "").join("_");
+
+        console.log(words, buildUnitReference());
     }
 
-    parseDisp = buildParserStage("disp", "light", /disp(?:_?[Hh]2[Oo0]|[Hh]g)?|(?:[Hh]2[Oo0]|[Hh]g)(?:_?disp)?/g, (lo, _hi) => lo != "", parseBaseUnit);
-    parseSqOrCb = buildParserStage("sqOrCb", null, /sq|cb/g, (lo, hi) => lo != "" || hi != "", parseDisp);
-    parseLight = buildParserStage("light", null, /l/g, (_lo, hi) => hi.match(/^[a-zA-Z]/) !== null, parseSqOrCb);
+    parseDisp = buildParserStage("disp", "light", /disp(?:lacement)?(?:_?of)?(?:_?(?:H2[O0]|Hg|water|mercury))?|(?:H2[O0]|Hg|water|mercury)(?:_?disp(?:lacement)?)?/gi, (lo, _hi) => lo != "", parseBaseUnit);
+    parseSqOrCb = buildParserStage("sqOrCb", null, /sq(?:uare)?|cb|cubic/gi, (lo, hi) => lo != "" || hi != "", parseDisp);
+    parseLight = buildParserStage("light", null, /l|[lL][iI][gG][hH][tT]/g, (_lo, hi) => hi.match(/^[a-zA-Z]/) !== null, parseSqOrCb);
     parseScale = buildParserStage("scale", null, scaleRegExp, (_lo, hi) => hi.match(/^[a-zA-Z]/) !== null, parseLight);
 
     parseScale([shortUnit], {});
@@ -1643,56 +1869,6 @@ export function parseShortUnit(shortUnit: string) {
 // 5. for lengths, "Hg" or "hg" may be inserted after any word (but not before the first word)
 // 6. for lengths, masses, weights/forces, or volumes, "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
 // 7. for masses, weights/forces, or volumes, "disp" may be inserted after any word (but not before the first word)
-
-// function buildAliasLongForms(aliasProps: UnitProps | Exclude<UnitProps["aliases"], undefined>[number]): Set<string> {
-//     const id = aliasProps.id;
-
-//     if (id != id.normalize("NFC").toLowerCase()) {
-//         throw new Error(id);
-//     }
-
-//     // 1. plurals and different accent forms are accounted for
-
-//     let inOrderForms = aliasProps.plurals === undefined ? [[...id], [...id, "s"]] : [id, ...aliasProps.plurals].map((form) => [...form]);
-
-//     for (const accent of aliasProps.accents ?? []) {
-//         inOrderForms = inOrderForms.concat(inOrderForms.map((form) => [
-//             ...form.slice(0, accent.index),
-//             accent.unicode,
-//             ...form.slice(accent.index + 1)
-//         ]));
-//     }
-
-//     const splitInOrderForms = inOrderForms.map((form) => form.join("").split("_"));
-
-//     // 2. any combination of "of"s can be removed
-
-//     const withoutOfForms = splitInOrderForms.flatMap((form) => combinationsWithout(form, "of"));
-
-//     // 3. words can be in any order
-
-//     const outOfOrderForms = withoutOfForms.flatMap((form) => orderings(form));
-
-//     const splicedForms = outOfOrderForms.map((form) => form.length == 0 ? [] : [form[0], ...form.slice(1).flatMap((word) => ["_", word])]);
-
-//     // 4. any combination of underscores can be removed
-
-//     const withoutUnderscoreForms = splicedForms.flatMap((form) => combinationsWithout(form, "_"));
-
-//     return new Set(withoutUnderscoreForms.map((form) => form.join("")));
-// }
-
-// function buildUnitLongForms(unitProps: UnitProps): Set<string> {
-//     const forms: Set<string> = new Set();
-
-//     for (const alias of [unitProps, ...(unitProps.aliases ?? [])]) {
-//         for (const form of buildAliasLongForms(alias)) {
-//             forms.add(form);
-//         }
-//     }
-
-//     return forms;
-// }
 
 // type Mod = "si_prefix" | "light" | "square" | "cubic" | "of_mercury" | "of_water" | "of_displacement" | "of_weight" | "of_mass";
 // type ModifiedForms = Map<string, { mods: Mod[], dimension: string }>;
@@ -1892,70 +2068,6 @@ export function parseShortUnit(shortUnit: string) {
 //     ].map((modStr) => [modStr, "of_displacement"])), ["length", "mass", "force", "volume"], ["of_weight", "of_water"]);
 
 //     return new Map([...forms].filter(([_, { mods, dimension: _dimension }]) => mods.length != 0));
-// }
-
-// export function buildUnitReference(): Set<string> {
-//     // 1. build all permutations of long names
-//     // 2. mix in short names
-//     // 3. take product with all permutations of prefixes
-//     // 4. resolve conflicts
-
-//     // 1. build long/short base units
-
-//     const longBaseUnits: Map<string, string> = new Map();
-//     const shortBaseUnits: Map<string, string> = new Map();
-//     const lowercaseShortBaseUnits: Map<string, string> = new Map();
-
-//     for (const unit of UNIT_PROPS) {
-//         for (const form of buildUnitLongForms(unit)) {
-//             if (longBaseUnits.has(form)) {
-//                 console.log("LONG CONTRADICTION: " + unit.id + " " + form);
-//             } else {
-//                 longBaseUnits.set(form, unit.id);
-//             }
-//         }
-
-//         for (const form of buildUnitShortForms(unit)) {
-//             if (longBaseUnits.has(form) && longBaseUnits.get(form) !== unit.id || shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id) {
-//                 console.log("SHORT CONTRADICTION: " + unit.id + " " + form);
-//             } else {
-//                 shortBaseUnits.set(form, unit.id);
-//             }
-//         }
-
-//         for (const form of buildUnitLowercaseShortForms(unit)) {
-//             if (longBaseUnits.has(form) && longBaseUnits.get(form) !== unit.id || shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id || lowercaseShortBaseUnits.has(form) && lowercaseShortBaseUnits.get(form) !== unit.id) {
-//                 console.log("lowercase short contradiction: " + unit.id + " " + form);
-//             } else {
-//                 lowercaseShortBaseUnits.set(form, unit.id);
-//             }
-//         }
-//     }
-
-//     // 2. add modifiers
-
-//     const longModifiedUnits: Map<string, { unitId: string, mods: Mod[], dimension: string }> = new Map();
-//     const shortModifiedUnits: Map<string, { unitId: string, mods: Mod[], dimension: string }> = new Map();
-
-//     for (const unit of [UNIT_PROPS[Math.floor(Math.random() * UNIT_PROPS.length)]]) {
-//         // for (const [form, { mods, dimension }] of buildLongModifierForms([...longBaseUnits, ...lowercaseShortBaseUnits].filter(([_, unitId]) => unitId == unit.id).map(([baseUnit, _]) => baseUnit), unit)) {
-//         //     if (longBaseUnits.has(form)) {
-//         //         console.log("modified long contradiction: " + unit.id + " " + form);
-//         //     } else {
-//         //         longModifiedUnits.set(form, { unitId: unit.id, mods, dimension });
-//         //     }
-//         // }
-
-//         for (const [form, { mods, dimension }] of buildShortModifierForms([...shortBaseUnits, ...lowercaseShortBaseUnits].filter(([_, unitId]) => unitId == unit.id).map(([baseUnit, _]) => baseUnit), unit)) {
-//             if (longBaseUnits.has(form) && longBaseUnits.get(form) !== unit.id || shortBaseUnits.has(form) && shortBaseUnits.get(form) !== unit.id || lowercaseShortBaseUnits.has(form) && lowercaseShortBaseUnits.get(form) !== unit.id || shortModifiedUnits.has(form) && shortModifiedUnits.get(form)!.unitId !== unit.id) {
-//                 console.log("modified short contradiction: " + unit.id + " " + form);
-//             } else {
-//                 shortModifiedUnits.set(form, { unitId: unit.id, mods, dimension });
-//             }
-//         }
-//     }
-
-//     return new Set([...longBaseUnits.keys(), ...shortBaseUnits.keys(), ...lowercaseShortBaseUnits.keys(), ...longModifiedUnits.keys(), ...shortModifiedUnits.keys()]);
 // }
 
 interface UnitlessUnit {
