@@ -1,6 +1,4 @@
-import { mod, Num } from "./numbers";
-
-type Quantity = (
+export type Quantity = (
     "length" | "area" | "volume" |
     "angle" | "solid_angle" |
     "mass" |
@@ -19,14 +17,14 @@ type Quantity = (
     "proportion"
 );
 
-interface UnitWordPropsNoun {
+export interface UnitWordPropsNoun {
     readonly type: "noun";
     readonly word: string;
     readonly accents?: ReadonlyArray<{ index: number, unicode: string }>;
     readonly plurals?: ReadonlyArray<string>; // default: with trailing s
 }
 
-interface UnitWordPropsModifier {
+export interface UnitWordPropsModifier {
     readonly type: "modifier";
     readonly word: string;
     readonly isOf: boolean;
@@ -34,17 +32,17 @@ interface UnitWordPropsModifier {
     readonly plurals?: ReadonlyArray<string>; // default: none
 }
 
-type UnitWordProps = UnitWordPropsNoun | UnitWordPropsModifier;
+export type UnitWordProps = UnitWordPropsNoun | UnitWordPropsModifier;
 
-type UnitFormProps = ReadonlyArray<UnitWordProps>;
+export type UnitFormProps = ReadonlyArray<UnitWordProps>;
 
-interface UnitDisambiguatorProps {
+export interface UnitDisambiguatorProps {
     readonly system: string;
     readonly systemForms: ReadonlyArray<UnitFormProps>;
     readonly shortSystemForms?: ReadonlyArray<UnitFormProps>;
 }
 
-interface UnitProps {
+export interface UnitProps {
     readonly id: string;
 
     readonly quantity: Quantity;
@@ -190,7 +188,7 @@ const LONG_TON_SYSTEM = {
 // - long_month: 31 days / month
 // - synodic_month: precise days / month
 
-const UNIT_PROPS: ReadonlyArray<UnitProps> = [
+export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     // length
     {
         id: "angstrom",
@@ -1527,415 +1525,3 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         shortForms: simpleForms(["ppq"]),
     },
 ] as const satisfies ReadonlyArray<UnitProps>;
-
-const SI_PREFIXES_LONG: { [prefix: string]: Num } = {
-    "quecto": { type: "rational", n: 1n, d: 10n ** 30n },
-    "ronto": { type: "rational", n: 1n, d: 10n ** 27n },
-    "yocto": { type: "rational", n: 1n, d: 10n ** 24n },
-    "zepto": { type: "rational", n: 1n, d: 10n ** 21n },
-    "atto": { type: "rational", n: 1n, d: 10n ** 18n },
-    "femto": { type: "rational", n: 1n, d: 10n ** 15n },
-    "pico": { type: "rational", n: 1n, d: 10n ** 12n },
-    "nano": { type: "rational", n: 1n, d: 1_000_000_000n },
-    "micro": { type: "rational", n: 1n, d: 1_000_000n },
-    "milli": { type: "rational", n: 1n, d: 1000n },
-    "centi": { type: "rational", n: 1n, d: 100n },
-    "deci": { type: "rational", n: 1n, d: 10n },
-    "deca": { type: "int", int: 10n },
-    "hecto": { type: "int", int: 100n },
-    "kilo": { type: "int", int: 1000n },
-    "mega": { type: "int", int: 1_000_000n },
-    "giga": { type: "int", int: 1_000_000_000n },
-    "tera": { type: "int", int: 10n ** 12n },
-    "peta": { type: "int", int: 10n ** 15n },
-    "exa": { type: "int", int: 10n ** 18n },
-    "zetta": { type: "int", int: 10n ** 21n },
-    "yotta": { type: "int", int: 10n ** 24n },
-    "ronna": { type: "int", int: 10n ** 27n },
-    "quetta": { type: "int", int: 10n ** 30n },
-};
-
-const SI_PREFIXES_SHORT: { [prefix: string]: Num } = {
-    "q": { type: "rational", n: 1n, d: 10n ** 30n },
-    "r": { type: "rational", n: 1n, d: 10n ** 27n },
-    "y": { type: "rational", n: 1n, d: 10n ** 24n },
-    "z": { type: "rational", n: 1n, d: 10n ** 21n },
-    "a": { type: "rational", n: 1n, d: 10n ** 18n },
-    "f": { type: "rational", n: 1n, d: 10n ** 15n },
-    "p": { type: "rational", n: 1n, d: 10n ** 12n },
-    "n": { type: "rational", n: 1n, d: 1_000_000_000n },
-    "\xb5": { type: "rational", n: 1n, d: 1_000_000n },
-    "mc": { type: "rational", n: 1n, d: 1_000_000n },
-    "m": { type: "rational", n: 1n, d: 1000n },
-    "c": { type: "rational", n: 1n, d: 100n },
-    "d": { type: "rational", n: 1n, d: 10n },
-    "da": { type: "int", int: 10n },
-    "h": { type: "int", int: 100n },
-    "k": { type: "int", int: 1000n },
-    "M": { type: "int", int: 1_000_000n },
-    "G": { type: "int", int: 1_000_000_000n },
-    "T": { type: "int", int: 10n ** 12n },
-    "P": { type: "int", int: 10n ** 15n },
-    "E": { type: "int", int: 10n ** 18n },
-    "Z": { type: "int", int: 10n ** 21n },
-    "Y": { type: "int", int: 10n ** 24n },
-    "R": { type: "int", int: 10n ** 27n },
-    "Q": { type: "int", int: 10n ** 30n },
-};
-
-const BINARY_PREFIXES_LONG: { [prefix: string]: Num } = {
-    "kibi": { type: "int", int: 1024n },
-    "mebi": { type: "int", int: 1024n ** 2n },
-    "gibi": { type: "int", int: 1024n ** 3n },
-    "tebi": { type: "int", int: 1024n ** 4n },
-    "pebi": { type: "int", int: 1024n ** 5n },
-    "exbi": { type: "int", int: 1024n ** 6n },
-    "zebi": { type: "int", int: 1024n ** 7n },
-    "yobi": { type: "int", int: 1024n ** 8n },
-    "robi": { type: "int", int: 1024n ** 9n },
-    "quebi": { type: "int", int: 1024n ** 10n },
-};
-
-const BINARY_PREFIXES_SHORT: { [prefix: string]: Num } = {
-    "Ki": { type: "int", int: 1024n },
-    "Mi": { type: "int", int: 1024n ** 2n },
-    "Gi": { type: "int", int: 1024n ** 3n },
-    "Ti": { type: "int", int: 1024n ** 4n },
-    "Pi": { type: "int", int: 1024n ** 5n },
-    "Ei": { type: "int", int: 1024n ** 6n },
-    "Zi": { type: "int", int: 1024n ** 7n },
-    "Yi": { type: "int", int: 1024n ** 8n },
-    "Ri": { type: "int", int: 1024n ** 9n },
-    "Qi": { type: "int", int: 1024n ** 10n },
-};
-
-function orderings<T>(array: T[]): T[][] {
-    if (array.length == 0) return [[]];
-    if (array.length == 1) return [[array[0]]];
-
-    const ords: T[][] = [];
-
-    for (let i = 0; i < array.length; i++) {
-        const ordsWithout = orderings([...array.slice(0, i), ...array.slice(i + 1)]);
-
-        for (const ord of ordsWithout) {
-            ords.push([array[i], ...ord]);
-        }
-    }
-
-    return ords;
-}
-
-function combinations<T>(array: T[]): T[][] {
-    const combs: T[][] = [];
-
-    const max = 1n << BigInt(array.length);
-    for (let i = 0n; i < max; i++) {
-        combs.push(array.filter((_, j) => (i & (1n << BigInt(j))) != 0n));
-    }
-
-    return combs;
-}
-
-function combinationsWithout<T>(array: T[], without: T): T[][] {
-    const indices = [...array.keys()].filter((i) => array[i] === without);
-
-    return combinations(indices).map((comb) => array.filter((_, i) => !comb.includes(i)));
-}
-
-function cartProd<T>(opts: T[][]): T[][] {
-    if (opts.length == 0) return [[]];
-
-    const nProd = cartProd(opts.slice(1));
-
-    let prod: T[][] = [];
-    for (const opt of opts[0]) {
-        prod = prod.concat(nProd.map(p => [opt, ...p]));
-    }
-
-    return prod;
-}
-
-function buildWordForms(wordProps: UnitWordProps, isShort: boolean): string[][] {
-    const { type, word, accents, plurals } = wordProps;
-
-    let forms = plurals === undefined ? type == "noun" && !isShort ? [word, word + "s"] : [word] : [word, ...plurals];
-
-    for (const accent of accents ?? []) {
-        forms = forms.concat(forms.map((form) => [...form]).map((form) => [
-            ...form.slice(0, accent.index),
-            accent.unicode,
-            ...form.slice(accent.index + 1)
-        ].join("")));
-    }
-    
-    return wordProps.type == "modifier" && wordProps.isOf ? forms.flatMap((form) => [[form], ["of", form]]) : forms.map((form) => [form]);
-}
-
-function splitFormLowercases(splitForms: string[][][]): { splitForm: string[][], lowercases: number }[] {
-    let combSplitForms: { splitForm: string[][], lowercases: number }[] = [];
-
-    for (const splitForm of splitForms) {
-        const splitFormLowercasesLists = [];
-
-        for (const wordGrp of splitForm) {
-            const wordLowercasesGrps = [];
-
-            for (const word of wordGrp) {
-                const wordChars = [...word];
-
-                const uppercaseIndices = [...wordChars.keys()].filter((i) => wordChars[i] != wordChars[i].toLowerCase());
-
-                const wordLowercases = [];
-
-                for (const comb of combinations(uppercaseIndices)) {
-                    wordLowercases.push({ word: wordChars.map((c, i) => comb.includes(i) ? c.toLowerCase() : c).join(""), lowercases: comb.length });
-                }
-
-                wordLowercasesGrps.push(wordLowercases);
-            }
-
-            const wordGrpLowercases = cartProd(wordLowercasesGrps).map((wordLowercases) => ({
-                wordGrp: wordLowercases.map((wordLowercase) => wordLowercase.word),
-                lowercases: wordLowercases.reduce((lowercases, wordLowercase) => lowercases + wordLowercase.lowercases, 0)
-            }));
-
-            splitFormLowercasesLists.push(wordGrpLowercases);
-        }
-
-        const splitFormLowercases = cartProd(splitFormLowercasesLists).map((wordGrpLowercases) => ({
-            splitForm: wordGrpLowercases.map((wordLowercase) => wordLowercase.wordGrp),
-            lowercases: wordGrpLowercases.reduce((lowercases, wordGrpLowercase) => lowercases + wordGrpLowercase.lowercases, 0)
-        }));
-
-        combSplitForms = combSplitForms.concat(splitFormLowercases);
-    }
-
-    return combSplitForms;
-}
-
-function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
-    let combSplitForms: { splitForm: string[][], lowercases: number }[] = [];
-
-    for (const formProps of unitProps.forms) {
-        // 1. plurals and different accent forms are accounted for
-        // 2. any combination of "of"s can be removed
-
-        const opts = formProps.map((word) => buildWordForms(word, false));
-        const splitForms = cartProd(opts);
-
-        combSplitForms = combSplitForms.concat(splitForms.map((splitForm) => ({ splitForm, lowercases: 0 })));
-    }
-
-    for (const shortFormProps of unitProps.shortForms ?? []) {
-        const opts = shortFormProps.map((word) => buildWordForms(word, true));
-        const splitForms = cartProd(opts);
-
-        combSplitForms = combSplitForms.concat(splitFormLowercases(splitForms));
-    }
-
-    for (const disambiguatorId in unitProps.disambiguators) {
-        const { systemForms, shortSystemForms } = unitProps.disambiguators[disambiguatorId];
-
-        let modifiedCombSplitForms: typeof combSplitForms = [];
-        
-        for (const formProps of systemForms) {
-            const opts = formProps.map((word) => buildWordForms(word, false));
-            const systemSplitForms = cartProd(opts);
-
-            modifiedCombSplitForms = modifiedCombSplitForms.concat(combSplitForms.flatMap(({ splitForm, lowercases }) => systemSplitForms.map((sSF) => ({ splitForm: splitForm.concat(sSF), lowercases }))));
-        }
-
-        for (const shortFormProps of shortSystemForms ?? []) {
-            const opts = shortFormProps.map((word) => buildWordForms(word, true));
-            const systemSplitForms = cartProd(opts);
-            const systemLowercaseSplitForms = splitFormLowercases(systemSplitForms);
-
-            modifiedCombSplitForms = modifiedCombSplitForms.concat(combSplitForms.flatMap(({ splitForm, lowercases }) => systemLowercaseSplitForms.map((({ splitForm: sLSF, lowercases: sLs }) => ({
-                splitForm: splitForm.concat(sLSF),
-                lowercases: lowercases + sLs
-            })))));
-        }
-
-        combSplitForms = combSplitForms.concat(modifiedCombSplitForms);
-    }
-
-    // 3/1. words can be in any order
-
-    const outOfOrderSplitForms = combSplitForms.flatMap(({ splitForm, lowercases }) => orderings(splitForm).flatMap((ord) => ({ splitForm: ord.flat(), lowercases })));
-
-    // 4/2. any combination of underscores can be removed
-
-    const splicedForms = outOfOrderSplitForms.map(({ splitForm, lowercases }) => ({ splitForm: splitForm.length == 0 ? [] : [splitForm[0], ...splitForm.slice(1).flatMap((word) => ["_", word])], lowercases }));
-    const withoutUnderscoreForms = splicedForms.flatMap(({ splitForm, lowercases }) => combinationsWithout(splitForm, "_").map((comb): [string, { lowercases: number }] => [comb.join(""), { lowercases }]));
-
-    const forms: Map<string, { lowercases: number }> = new Map();
-
-    for (const [form, { lowercases }] of withoutUnderscoreForms) {
-        const curr = forms.get(form);
-
-        if (curr === undefined) {
-            forms.set(form, { lowercases });
-        } else {
-            curr.lowercases = Math.min(curr.lowercases, lowercases);
-        }
-    }
-
-    return forms;
-}
-
-export function buildUnitReference(): Map<string, { unitId: string, lowercases: number }[]> {
-    const ref: Map<string, { unitId: string, lowercases: number }[]> = new Map();
-
-    for (const unit of UNIT_PROPS) {
-        for (const [form, { lowercases }] of buildForms(unit)) {
-            const found = ref.get(form);
-
-            if (found === undefined) {
-                ref.set(form, [{ unitId: unit.id, lowercases }]);
-            } else {
-                found.push({ unitId: unit.id, lowercases });
-            }
-        }
-    }
-
-    return ref;
-}
-
-const scaleRegExps = [
-    ...[...Object.keys(SI_PREFIXES_SHORT), ...Object.keys(BINARY_PREFIXES_SHORT)].map((scale) => new RegExp(scale, "g")),
-    ...[...Object.keys(SI_PREFIXES_LONG), ...Object.keys(BINARY_PREFIXES_LONG)].map((scale) => new RegExp(scale, "gi")),
-];
-
-const ref = buildUnitReference();
-
-export function parseUnit(unit: string) {
-    unit = unit.normalize("NFC");
-
-    type ParserStage = (parts: string[], mods: Record<string, { modStr: string, index: number } | null>) => void;
-    function buildParserStage(modId: string, startIndexModId: string | null, modRegExps: RegExp[], matchValidator: (lo: string, hi: string, modStr: string) => boolean, nStageFn: ParserStage): ParserStage {
-        return function(parts: string[], mods: Record<string, { modStr: string, index: number } | null>): void {
-            for (let i = startIndexModId === null ? 0 : mods[startIndexModId]?.index ?? 0; i < parts.length; i++) {
-                const part = parts[i];
-
-                for (const match of modRegExps.flatMap((regExp) => [...part.matchAll(regExp)])) {
-                    const modStr = match[0];
-                    const index = match.index;
-
-                    const lo = part.slice(0, index);
-                    const hi = part.slice(index + modStr.length);
-                    const superLo = parts.slice(0, i).join("") + lo;
-                    const superHi = hi + parts.slice(i + 1).join("");
-
-                    if (!matchValidator(superLo, superHi, modStr)) continue;
-
-                    nStageFn([
-                        ...parts.slice(0, i),
-                        ...(lo == "" ? [] : [lo]),
-                        ...(hi == "" ? [] : [hi]),
-                        ...parts.slice(i + 1)
-                    ], { ...mods, [modId]: { modStr, index: i + (lo == "" ? 0 : 1) } });
-                }
-            }
-
-            nStageFn(parts, { ...mods, [modId]: null });
-        };
-    }
-
-    let parseScale: ParserStage;
-    let parseLight: ParserStage;
-    let parseSqOrCb: ParserStage;
-    let parseDisp: ParserStage;
-
-    function parseBaseUnit(parts: string[], mods: Record<string, { modStr: string, index: number } | null>) {
-        const words = parts.flatMap(p => p.split("_")).filter(w => w != "").join("_");
-
-        console.log(words, ref.get(words), mods);
-
-        if (ref.get(words) === undefined) return;
-    }
-
-    parseDisp = buildParserStage("disp", "light", [
-        /disp/gi,
-        /displacement/gi,
-        /disp(?:lacement)?(?:_?of)?_?(?:H2[O0]|Hg|water|mercury)/gi,
-        /H2[O0]/gi,
-        /Hg/gi,
-        /water/gi,
-        /mercury/gi,
-        /(?:H2[O0]|Hg|water|mercury)_?disp/gi,
-        /(?:H2[O0]|Hg|water|mercury)_?displacement/gi,
-    ], (lo, _hi) => lo != "", parseBaseUnit);
-    parseSqOrCb = buildParserStage("sqOrCb", null, [/sq/gi, /square/gi, /c[bu]/gi, /cubic/gi], (lo, hi) => lo != "" || hi != "", parseDisp);
-    parseLight = buildParserStage("light", null, [/l/g, /light/gi], (_lo, hi) => hi.match(/^[^_]/) !== null, parseSqOrCb);
-    parseScale = buildParserStage("scale", null, scaleRegExps, (_lo, hi, modStr) => (modStr in SI_PREFIXES_LONG || modStr in BINARY_PREFIXES_LONG) ? hi != "" : hi.match(/^[^_]/) !== null, parseLight);
-
-    parseScale([unit], {});
-}
-
-// Long unit normalization:
-// 1. normalize to NFC
-// 2. lowercase
-
-// Long unit matching rules:
-// 1. plurals and different accent forms are accounted for
-// 2. any combination of "of"s can be removed
-// 3. words can be in any order
-// 4. any combination of underscores can be removed
-
-// Long unit modifier rules:
-// 1. the long or lowercase short base unit may be used
-// 2. long SI prefixes may be inserted before any word (but not after the last word)
-// 3. short SI prefixes may be inserted before any word (but not after the last word)
-// 4. for times, "light" or "l" may be inserted before any word (but not after the last word)
-// 5. for lengths, "square", "squared", "sq", "cube", "cubed", "cubic", or "cb" may be inserted at any position
-// 6. for lengths, "[of] mercury" or "[of] hg" may be inserted at any position
-// 7. for lengths, masses, weights/forces, or volumes, "[of] water" or "[of] h2o" may be inserted at any position
-// 8. for masses, weights/forces, or volumes, "[of] displacement", "[of] disp", "[of] water displacement", "[of] water disp", "[of] h2o displacement", or "[of] h20 disp" may be inserted at any position
-
-// Short unit normalization:
-// 1. normalize to NFC
-
-// Short unit matching rules:
-// 1. parts separated by underscores can be in any order
-// 2. any combination of underscores can be removed
-// 3. any combination of uppercase letters can be lowercased
-
-// Short unit modifier rules:
-// 1. the short or lowercase short base unit may be used
-// 2. short SI prefixes may be inserted before any word (but not after the last word)
-// 3. for times, "l" may be inserted before any word (but not after the last word)
-// 4. for lengths, "sq" or "cb" may be inserted at any position
-// 5. for lengths, "Hg" or "hg" may be inserted after any word (but not before the first word)
-// 6. for lengths, masses, weights/forces, or volumes, "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
-// 7. for masses, weights/forces, or volumes, "disp" may be inserted after any word (but not before the first word)
-
-interface UnitlessUnit {
-    readonly type: "unitless";
-}
-
-interface BaseUnit {
-    readonly type: "base";
-    readonly unit: string;
-    readonly scale: Num;
-}
-
-interface ProdUnit {
-    readonly type: "prod";
-    readonly lhs: Unit;
-    readonly rhs: Unit;
-}
-
-interface QuotUnit {
-    readonly type: "quot";
-    readonly lhs: Unit;
-    readonly rhs: Unit;
-}
-
-interface PowUnit {
-    readonly type: "pow";
-    readonly arg: Unit;
-    readonly pow: bigint;
-}
-
-export type Unit = UnitlessUnit | BaseUnit | ProdUnit | QuotUnit | PowUnit;
