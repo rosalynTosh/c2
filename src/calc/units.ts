@@ -87,8 +87,8 @@ function simpleForms(formWords: string[]): UnitFormProps[] {
 const US_LAND_SYSTEM = {
     distance: {
         system: "us_land",
-        systemForms: [[modifier("united_states"), modifier("statutory"), modifier("statute"), modifier("international"), modifier("land")]],
-        shortSystemForms: [[modifier("US"), modifier("us"), modifier("stat"), modifier("intl"), modifier("int"), modifier("land")]],
+        systemForms: [[modifier("united_states")], [modifier("statutory")], [modifier("statute")], [modifier("international")], [modifier("land")]],
+        shortSystemForms: [[modifier("US")], [modifier("us")], [modifier("stat")], [modifier("intl")], [modifier("int")], [modifier("land")]],
     },
 } as const satisfies Partial<UnitProps["disambiguators"]>;
 
@@ -96,15 +96,15 @@ const NAUTICAL_SYSTEM = {
     distance: {
         system: "nautical",
         systemForms: [[modifier("nautical")]],
-        shortSystemForms: [[modifier("naut"), modifier("n")]],
+        shortSystemForms: [[modifier("naut")], [modifier("n")]],
     },
 } as const satisfies Partial<UnitProps["disambiguators"]>;
 
 const US_VOLUME_SYSTEM = {
     volume: {
         system: "us",
-        systemForms: [[modifier("united_states"), modifier("customary")]],
-        shortSystemForms: [[modifier("US"), modifier("us"), modifier("cust")]],
+        systemForms: [[modifier("united_states")], [modifier("customary")]],
+        shortSystemForms: [[modifier("US")], [modifier("us")], [modifier("cust")]],
     },
 } as const satisfies Partial<UnitProps["disambiguators"]>;
 
@@ -127,8 +127,8 @@ const TROY_WEIGHT_SYSTEM = {
 const US_WEIGHT_SYSTEM = {
     weight: {
         system: "us",
-        systemForms: [[modifier("united_states"), modifier("international"), modifier("avoirdupois")]],
-        shortSystemForms: [[modifier("US"), modifier("us"), modifier("intl"), modifier("int"), modifier("av")]],
+        systemForms: [[modifier("united_states")], [modifier("international")], [modifier("avoirdupois")]],
+        shortSystemForms: [[modifier("US")], [modifier("us")], [modifier("intl")], [modifier("int")], [modifier("av")]],
     },
 } as const satisfies Partial<UnitProps["disambiguators"]>;
 
@@ -655,7 +655,7 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         quantity: "angle",
 
-        forms: [[noun("degree"), modifier("of arc")]],
+        forms: [[noun("degree")], [noun("degree"), modifier("of arc")]],
         shortForms: simpleForms(["°", "deg", "degs"]),
     },
     {
@@ -1669,7 +1669,49 @@ function buildWordForms(wordProps: UnitWordProps, isShort: boolean): string[][] 
         ].join("")));
     }
     
-    return wordProps.type == "modifier" && wordProps.isOf ? forms.map((form) => ["of", form]) : forms.map((form) => [form]);
+    return wordProps.type == "modifier" && wordProps.isOf ? forms.flatMap((form) => [[form], ["of", form]]) : forms.map((form) => [form]);
+}
+
+function splitFormLowercases(splitForms: string[][][]): { splitForm: string[][], lowercases: number }[] {
+    let combSplitForms: { splitForm: string[][], lowercases: number }[] = [];
+
+    for (const splitForm of splitForms) {
+        const splitFormLowercasesLists = [];
+
+        for (const wordGrp of splitForm) {
+            const wordLowercasesGrps = [];
+
+            for (const word of wordGrp) {
+                const wordChars = [...word];
+
+                const uppercaseIndices = [...wordChars.keys()].filter((i) => wordChars[i] != wordChars[i].toLowerCase());
+
+                const wordLowercases = [];
+
+                for (const comb of combinations(uppercaseIndices)) {
+                    wordLowercases.push({ word: wordChars.map((c, i) => comb.includes(i) ? c.toLowerCase() : c).join(""), lowercases: comb.length });
+                }
+
+                wordLowercasesGrps.push(wordLowercases);
+            }
+
+            const wordGrpLowercases = cartProd(wordLowercasesGrps).map((wordLowercases) => ({
+                wordGrp: wordLowercases.map((wordLowercase) => wordLowercase.word),
+                lowercases: wordLowercases.reduce((lowercases, wordLowercase) => lowercases + wordLowercase.lowercases, 0)
+            }));
+
+            splitFormLowercasesLists.push(wordGrpLowercases);
+        }
+
+        const splitFormLowercases = cartProd(splitFormLowercasesLists).map((wordGrpLowercases) => ({
+            splitForm: wordGrpLowercases.map((wordLowercase) => wordLowercase.wordGrp),
+            lowercases: wordGrpLowercases.reduce((lowercases, wordGrpLowercase) => lowercases + wordGrpLowercase.lowercases, 0)
+        }));
+
+        combSplitForms = combSplitForms.concat(splitFormLowercases);
+    }
+
+    return combSplitForms;
 }
 
 function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
@@ -1689,44 +1731,34 @@ function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
         const opts = shortFormProps.map((word) => buildWordForms(word, true));
         const splitForms = cartProd(opts);
 
-        for (const splitForm of splitForms) {
-            const splitFormLowercasesLists = [];
-
-            for (const wordGrp of splitForm) {
-                const wordLowercasesGrps = [];
-
-                for (const word of wordGrp) {
-                    const wordChars = [...word];
-
-                    const uppercaseIndices = [...wordChars.keys()].filter((i) => wordChars[i] != wordChars[i].toLowerCase());
-
-                    const wordLowercases = [];
-
-                    for (const comb of combinations(uppercaseIndices)) {
-                        wordLowercases.push({ word: wordChars.map((c, i) => comb.includes(i) ? c.toLowerCase() : c).join(""), lowercases: comb.length });
-                    }
-
-                    wordLowercasesGrps.push(wordLowercases);
-                }
-
-                const wordGrpLowercases = cartProd(wordLowercasesGrps).map((wordLowercases) => ({
-                    wordGrp: wordLowercases.map((wordLowercase) => wordLowercase.word),
-                    lowercases: wordLowercases.reduce((lowercases, wordLowercase) => lowercases + wordLowercase.lowercases, 0)
-                }));
-
-                splitFormLowercasesLists.push(wordGrpLowercases);
-            }
-
-            const splitFormLowercases = cartProd(splitFormLowercasesLists).map((wordGrpLowercases) => ({
-                splitForm: wordGrpLowercases.map((wordLowercase) => wordLowercase.wordGrp),
-                lowercases: wordGrpLowercases.reduce((lowercases, wordGrpLowercase) => lowercases + wordGrpLowercase.lowercases, 0)
-            }));
-
-            combSplitForms = combSplitForms.concat(splitFormLowercases);
-        }
+        combSplitForms = combSplitForms.concat(splitFormLowercases(splitForms));
     }
 
-    // add long and short disambiguators
+    for (const disambiguatorId in unitProps.disambiguators) {
+        const { systemForms, shortSystemForms } = unitProps.disambiguators[disambiguatorId];
+
+        let modifiedCombSplitForms: typeof combSplitForms = [];
+        
+        for (const formProps of systemForms) {
+            const opts = formProps.map((word) => buildWordForms(word, false));
+            const systemSplitForms = cartProd(opts);
+
+            modifiedCombSplitForms = modifiedCombSplitForms.concat(combSplitForms.flatMap(({ splitForm, lowercases }) => systemSplitForms.map((sSF) => ({ splitForm: splitForm.concat(sSF), lowercases }))));
+        }
+
+        for (const shortFormProps of shortSystemForms ?? []) {
+            const opts = shortFormProps.map((word) => buildWordForms(word, true));
+            const systemSplitForms = cartProd(opts);
+            const systemLowercaseSplitForms = splitFormLowercases(systemSplitForms);
+
+            modifiedCombSplitForms = modifiedCombSplitForms.concat(combSplitForms.flatMap(({ splitForm, lowercases }) => systemLowercaseSplitForms.map((({ splitForm: sLSF, lowercases: sLs }) => ({
+                splitForm: splitForm.concat(sLSF),
+                lowercases: lowercases + sLs
+            })))));
+        }
+
+        combSplitForms = combSplitForms.concat(modifiedCombSplitForms);
+    }
 
     // 3/1. words can be in any order
 
@@ -1770,18 +1802,23 @@ export function buildUnitReference(): Map<string, { unitId: string, lowercases: 
     return ref;
 }
 
-const scaleRegExp = new RegExp([...Object.keys(SI_PREFIXES_SHORT), ...Object.keys(BINARY_PREFIXES_SHORT)].join("|"), "g");
+const scaleRegExps = [
+    ...[...Object.keys(SI_PREFIXES_SHORT), ...Object.keys(BINARY_PREFIXES_SHORT)].map((scale) => new RegExp(scale, "g")),
+    ...[...Object.keys(SI_PREFIXES_LONG), ...Object.keys(BINARY_PREFIXES_LONG)].map((scale) => new RegExp(scale, "gi")),
+];
 
-export function parseUnit(shortUnit: string) {
-    shortUnit = shortUnit.normalize("NFC");
+const ref = buildUnitReference();
+
+export function parseUnit(unit: string) {
+    unit = unit.normalize("NFC");
 
     type ParserStage = (parts: string[], mods: Record<string, { modStr: string, index: number } | null>) => void;
-    function buildParserStage(modId: string, startIndexModId: string | null, modRegExp: RegExp, matchValidator: (lo: string, hi: string) => boolean, nStageFn: ParserStage): ParserStage {
+    function buildParserStage(modId: string, startIndexModId: string | null, modRegExps: RegExp[], matchValidator: (lo: string, hi: string, modStr: string) => boolean, nStageFn: ParserStage): ParserStage {
         return function(parts: string[], mods: Record<string, { modStr: string, index: number } | null>): void {
             for (let i = startIndexModId === null ? 0 : mods[startIndexModId]?.index ?? 0; i < parts.length; i++) {
                 const part = parts[i];
 
-                for (const match of part.matchAll(modRegExp)) {
+                for (const match of modRegExps.flatMap((regExp) => [...part.matchAll(regExp)])) {
                     const modStr = match[0];
                     const index = match.index;
 
@@ -1790,7 +1827,7 @@ export function parseUnit(shortUnit: string) {
                     const superLo = parts.slice(0, i).join("") + lo;
                     const superHi = hi + parts.slice(i + 1).join("");
 
-                    if (!matchValidator(superLo, superHi)) continue;
+                    if (!matchValidator(superLo, superHi, modStr)) continue;
 
                     nStageFn([
                         ...parts.slice(0, i),
@@ -1813,15 +1850,27 @@ export function parseUnit(shortUnit: string) {
     function parseBaseUnit(parts: string[], mods: Record<string, { modStr: string, index: number } | null>) {
         const words = parts.flatMap(p => p.split("_")).filter(w => w != "").join("_");
 
-        console.log(words, buildUnitReference());
+        console.log(words, ref.get(words), mods);
+
+        if (ref.get(words) === undefined) return;
     }
 
-    parseDisp = buildParserStage("disp", "light", /disp(?:lacement)?(?:_?of)?(?:_?(?:H2[O0]|Hg|water|mercury))?|(?:H2[O0]|Hg|water|mercury)(?:_?disp(?:lacement)?)?/gi, (lo, _hi) => lo != "", parseBaseUnit);
-    parseSqOrCb = buildParserStage("sqOrCb", null, /sq(?:uare)?|cb|cubic/gi, (lo, hi) => lo != "" || hi != "", parseDisp);
-    parseLight = buildParserStage("light", null, /l|[lL][iI][gG][hH][tT]/g, (_lo, hi) => hi.match(/^[a-zA-Z]/) !== null, parseSqOrCb);
-    parseScale = buildParserStage("scale", null, scaleRegExp, (_lo, hi) => hi.match(/^[a-zA-Z]/) !== null, parseLight);
+    parseDisp = buildParserStage("disp", "light", [
+        /disp/gi,
+        /displacement/gi,
+        /disp(?:lacement)?(?:_?of)?_?(?:H2[O0]|Hg|water|mercury)/gi,
+        /H2[O0]/gi,
+        /Hg/gi,
+        /water/gi,
+        /mercury/gi,
+        /(?:H2[O0]|Hg|water|mercury)_?disp/gi,
+        /(?:H2[O0]|Hg|water|mercury)_?displacement/gi,
+    ], (lo, _hi) => lo != "", parseBaseUnit);
+    parseSqOrCb = buildParserStage("sqOrCb", null, [/sq/gi, /square/gi, /c[bu]/gi, /cubic/gi], (lo, hi) => lo != "" || hi != "", parseDisp);
+    parseLight = buildParserStage("light", null, [/l/g, /light/gi], (_lo, hi) => hi.match(/^[^_]/) !== null, parseSqOrCb);
+    parseScale = buildParserStage("scale", null, scaleRegExps, (_lo, hi, modStr) => (modStr in SI_PREFIXES_LONG || modStr in BINARY_PREFIXES_LONG) ? hi != "" : hi.match(/^[^_]/) !== null, parseLight);
 
-    parseScale([shortUnit], {});
+    parseScale([unit], {});
 }
 
 // Long unit normalization:
@@ -1860,206 +1909,6 @@ export function parseUnit(shortUnit: string) {
 // 5. for lengths, "Hg" or "hg" may be inserted after any word (but not before the first word)
 // 6. for lengths, masses, weights/forces, or volumes, "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
 // 7. for masses, weights/forces, or volumes, "disp" may be inserted after any word (but not before the first word)
-
-// type Mod = "si_prefix" | "light" | "square" | "cubic" | "of_mercury" | "of_water" | "of_displacement" | "of_weight" | "of_mass";
-// type ModifiedForms = Map<string, { mods: Mod[], dimension: string }>;
-
-// // todo: make these invoke dimensionally-correct functions instead of being hardcoded
-// const MOD_DIMENSION_CHANGES: { [mod in Mod]?: { [dimension: string]: string } } = {
-//     "light": {
-//         "time": "length"
-//     },
-//     "square": {
-//         "length": "area"
-//     },
-//     "cubic": {
-//         "length": "volume"
-//     },
-//     "of_mercury": {
-//         "length": "pressure"
-//     },
-//     "of_water": {
-//         "length": "pressure",
-//         "mass": "volume",
-//         "force": "volume",
-//         "volume": "mass"
-//     },
-//     "of_displacement": {
-//         "mass": "volume",
-//         "force": "volume",
-//         "volume": "mass"
-//     },
-//     "of_weight": {
-//         "mass": "force"
-//     },
-//     "of_mass": {
-//         "force": "mass"
-//     }
-// };
-
-// function insertModifiersInner(before: boolean, after: boolean, forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
-//     const modForms: ModifiedForms = new Map();
-
-//     function insertModForm(form: string, mods: Mod[], dimension: string) {
-//         const foundForm = modForms.get(form);
-//         if (foundForm !== undefined) {
-//             if (foundForm.mods.join(",") != mods.join(",") || foundForm.dimension != dimension) {
-//                 console.log("MOD CONFLICT", form, mods, dimension);
-//             }
-//         } else {
-//             modForms.set(form, { mods, dimension });
-//         }
-//     }
-
-//     for (const [form, { mods: formMods, dimension }] of forms) {
-//         insertModForm(form, formMods, dimension);
-
-//         if (dimensions !== undefined && !dimensions.includes(dimension)) continue;
-//         if (mutExMods !== undefined && formMods.some(m => mutExMods.includes(m))) continue;
-
-//         for (const [modStr, mod] of mods) {
-//             const nFormMods = formMods.concat([mod]).sort();
-//             const nDimension = (MOD_DIMENSION_CHANGES[mod] ?? {})[dimension] ?? dimension;
-
-//             if (before) {
-//                 insertModForm(modStr + form, nFormMods, nDimension);
-//                 if (after) insertModForm(modStr + "_" + form, nFormMods, nDimension);
-//             }
-
-//             for (const { index } of form.matchAll(/_/g)) {
-//                 const lo = form.slice(0, index);
-//                 const hi = form.slice(index + 1);
-
-//                 if (after) insertModForm(lo + "_" + modStr + "_" + hi, nFormMods, nDimension);
-//                 insertModForm(lo + "_" + modStr + hi, nFormMods, nDimension);
-//                 if (after) insertModForm(lo + modStr + "_" + hi, nFormMods, nDimension);
-//                 insertModForm(lo + modStr + hi, nFormMods, nDimension);
-//             }
-
-//             if (after) {
-//                 insertModForm(form + modStr, nFormMods, nDimension);
-//                 insertModForm(form + "_" + modStr, nFormMods, nDimension);
-//             }
-//         }
-//     }
-
-//     return modForms;
-// }
-
-// function insertModifiersBefore(forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
-//     return insertModifiersInner(true, false, forms, mods, dimensions, mutExMods);
-// }
-
-// function insertModifiers(forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
-//     return insertModifiersInner(true, true, forms, mods, dimensions, mutExMods);
-// }
-
-// function insertModifiersAfter(forms: ModifiedForms, mods: Map<string, Mod>, dimensions?: string[], mutExMods?: Mod[]): ModifiedForms {
-//     return insertModifiersInner(false, true, forms, mods, dimensions, mutExMods);
-// }
-
-// function buildLongModifierForms(baseForms: string[], unitProps: UnitProps): ModifiedForms {
-//     let forms: ModifiedForms = new Map(baseForms.map(f => [f, { mods: [], dimension: unitProps.quantity }]));
-
-//     // 2. long SI prefixes may be inserted before any word (but not after the last word)
-//     // 3. short SI prefixes may be inserted before any word (but not after the last word)
-
-//     forms = insertModifiersBefore(forms, new Map([
-//         ...Object.keys(SI_PREFIXES_LONG).flatMap((modStr) => [modStr, modStr + "_"]),
-//         ...Object.keys(SI_PREFIXES_SHORT).filter((modStr) => modStr == modStr.toLowerCase())
-//     ].map((modStr) => [modStr, "si_prefix"])));
-
-//     // 4. for times, "light" or "l" may be inserted before any word (but not after the last word)
-
-//     forms = insertModifiersBefore(forms, new Map(["light", "light_", "l"].map((modStr) => [modStr, "light"])), ["time"]);
-
-//     // 5. for lengths, "square", "squared", "sq", "cube", "cubed", "cubic", or "cb" may be inserted at any position
-//     // 6. for lengths, "[of] mercury" or "[of] hg" may be inserted at any position
-
-//     forms = insertModifiers(forms, new Map([
-//         ...["square", "squared", "sq"].map((modStr): [string, Mod] => [modStr, "square"]),
-//         ...["cube", "cubed", "cubic", "cb"].map((modStr): [string, Mod] => [modStr, "cubic"]),
-//         ...["of_mercury", "ofmercury", "mercury", "of_hg", "ofhg", "hg"].map((modStr): [string, Mod] => [modStr, "of_mercury"]),
-//     ]), ["length"]);
-
-//     // 9. for masses, "[of] weight", "[of] wght", "[of] wgt", "[of] wt", "[of] w", "[of] force", or "[of] f" may be inserted at any position
-
-//     forms = insertModifiers(forms, new Map([
-//         "of_weight", "ofweight", "weight",
-//         "of_wght", "ofwght", "wght",
-//         "of_wgt", "ofwgt", "wgt",
-//         "of_wt", "ofwt", "wt",
-//         "of_w", "ofw", "w",
-//         "of_force", "offorce", "force",
-//         "of_f", "off", "f"
-//     ].map((modStr) => [modStr, "of_weight"])), ["mass"]);
-
-//     // 10. for weights/forces, "[of] mass" may be inserted at any position
-
-//     forms = insertModifiers(forms, new Map(["of_mass", "ofmass", "mass"].map((modStr) => [modStr, "of_mass"])), ["force"], ["of_weight"]);
-
-//     // 7. for lengths, masses, weights/forces, or volumes, "[of] water" or "[of] h2o" may be inserted at any position
-
-//     forms = insertModifiers(forms, new Map(["of_water", "ofwater", "water", "of_h2o", "ofh2o", "h2o"].map((modStr) => [modStr, "of_water"])), ["length", "mass", "force", "volume"], ["of_weight", "of_mass"]);
-
-//     // 8. for masses, weights/forces, or volumes, "[of] displacement", "[of] disp", "[of] water displacement", "[of] water disp", "[of] h2o displacement", or "[of] h20 disp" may be inserted at any position
-
-//     forms = insertModifiers(forms, new Map([
-//         "of_displacement", "ofdisplacement", "displacement", "of_disp", "ofdisp", "disp",
-//         "of_water_displacement", "ofwater_displacement", "water_displacement", "of_water_disp", "ofwater_disp", "water_disp",
-//         "of_waterdisplacement", "ofwaterdisplacement", "waterdisplacement", "of_waterdisp", "ofwaterdisp", "waterdisp",
-//         "of_h2o_displacement", "ofh2o_displacement", "h2o_displacement", "of_h2o_disp", "ofh2o_disp", "h2o_disp",
-//         "of_h2odisplacement", "ofh2odisplacement", "h2odisplacement", "of_h2odisp", "ofh2odisp", "h2odisp"
-//     ].map((modStr) => [modStr, "of_displacement"])), ["length", "mass", "force", "volume"], ["of_weight", "of_mass", "of_water"]);
-
-//     return new Map([...forms].filter(([_, { mods, dimension: _dimension }]) => mods.length != 0));
-// }
-
-// function buildShortModifierForms(baseForms: string[], unitProps: UnitProps): ModifiedForms {
-//     let forms: ModifiedForms = new Map(baseForms.map(f => [f, { mods: [], dimension: unitProps.quantity }]));
-
-//     // 2. short SI prefixes may be inserted before any word (but not after the last word)
-
-//     forms = insertModifiersBefore(forms, new Map(Object.keys(SI_PREFIXES_SHORT).map((modStr) => [modStr, "si_prefix"])));
-
-//     // 3. for times, "l" may be inserted before any word (but not after the last word)
-
-//     forms = insertModifiersBefore(forms, new Map([["l", "light"]]), ["time"]);
-
-//     // 4. for lengths, "sq" or "cb" may be inserted at any position
-
-//     forms = insertModifiers(forms, new Map([
-//         ["sq", "square"],
-//         ["cb", "cubic"],
-//     ]), ["length"]);
-
-//     // 5. for lengths, "Hg" or "hg" may be inserted after any word (but not before the first word)
-
-//     forms = insertModifiersAfter(forms, new Map([
-//         ["Hg", "of_mercury"],
-//         ["hg", "of_mercury"],
-//     ]), ["length"]);
-
-//     // 8. for masses, "wght", "wgt", "wt", "w", or "f" may be inserted after any word (but not before the first word)
-
-//     forms = insertModifiersAfter(forms, new Map(["wght", "wgt", "wt", "w", "f"].map((modStr) => [modStr, "of_weight"])), ["mass"]);
-
-//     // 6. for lengths, masses, weights/forces, or volumes, "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
-
-//     forms = insertModifiers(forms, new Map(["H2O", "h2O", "H2o", "h2o"].map((modStr) => [modStr, "of_water"])), ["length", "mass", "force", "volume"], ["of_weight"]);
-
-//     // 7. for masses, weights/forces, or volumes, "disp" with optional pre- or post-fixed "H2O", "h2O", "H2o", or "h2o" may be inserted after any word (but not before the first word)
-
-//     forms = insertModifiersAfter(forms, new Map([
-//         "disp",
-//         "dispH2O", "disph2O", "dispH2o", "disph2o",
-//         "disp_H2O", "disp_h2O", "disp_H2o", "disp_h2o",
-//         "H2Odisp", "h2Odisp", "H2odisp", "h2odisp",
-//         "H2O_disp", "h2O_disp", "H2o_disp", "h2o_disp",
-//     ].map((modStr) => [modStr, "of_displacement"])), ["length", "mass", "force", "volume"], ["of_weight", "of_water"]);
-
-//     return new Map([...forms].filter(([_, { mods, dimension: _dimension }]) => mods.length != 0));
-// }
 
 interface UnitlessUnit {
     readonly type: "unitless";
