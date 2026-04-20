@@ -797,8 +797,8 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
             ...LONG_TON_SYSTEM,
         },
 
-        forms: [[modifier("ton")]],
-        shortForms: [[modifier("tn")]],
+        forms: [[noun("ton")]],
+        shortForms: [[noun("tn")]],
     },
     {
         id: "grain",
@@ -1081,8 +1081,8 @@ const UNIT_PROPS: ReadonlyArray<UnitProps> = [
             ...LONG_TON_SYSTEM,
         },
 
-        forms: [[modifier("ton")]],
-        shortForms: [[modifier("tn")]],
+        forms: [[noun("ton")]],
+        shortForms: [[noun("tn")]],
     },
     {
         id: "poundal",
@@ -1689,21 +1689,53 @@ function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
         const opts = shortFormProps.map((word) => buildWordForms(word, true));
         const splitForms = cartProd(opts);
 
-        // lowercase
+        for (const splitForm of splitForms) {
+            const splitFormLowercasesLists = [];
 
-        // concat to combSplitForms
+            for (const wordGrp of splitForm) {
+                const wordLowercasesGrps = [];
+
+                for (const word of wordGrp) {
+                    const wordChars = [...word];
+
+                    const uppercaseIndices = [...wordChars.keys()].filter((i) => wordChars[i] != wordChars[i].toLowerCase());
+
+                    const wordLowercases = [];
+
+                    for (const comb of combinations(uppercaseIndices)) {
+                        wordLowercases.push({ word: wordChars.map((c, i) => comb.includes(i) ? c.toLowerCase() : c).join(""), lowercases: comb.length });
+                    }
+
+                    wordLowercasesGrps.push(wordLowercases);
+                }
+
+                const wordGrpLowercases = cartProd(wordLowercasesGrps).map((wordLowercases) => ({
+                    wordGrp: wordLowercases.map((wordLowercase) => wordLowercase.word),
+                    lowercases: wordLowercases.reduce((lowercases, wordLowercase) => lowercases + wordLowercase.lowercases, 0)
+                }));
+
+                splitFormLowercasesLists.push(wordGrpLowercases);
+            }
+
+            const splitFormLowercases = cartProd(splitFormLowercasesLists).map((wordGrpLowercases) => ({
+                splitForm: wordGrpLowercases.map((wordLowercase) => wordLowercase.wordGrp),
+                lowercases: wordGrpLowercases.reduce((lowercases, wordGrpLowercase) => lowercases + wordGrpLowercase.lowercases, 0)
+            }));
+
+            combSplitForms = combSplitForms.concat(splitFormLowercases);
+        }
     }
 
     // add long and short disambiguators
 
     // 3/1. words can be in any order
 
-    const outOfOrderSplitForms = combSplitForms.flatMap(({ splitForm, lowercases }) => orderings(splitForm).flatMap((ord) => ({ splitForm: ord, lowercases })));
+    const outOfOrderSplitForms = combSplitForms.flatMap(({ splitForm, lowercases }) => orderings(splitForm).flatMap((ord) => ({ splitForm: ord.flat(), lowercases })));
 
     // 4/2. any combination of underscores can be removed
 
     const splicedForms = outOfOrderSplitForms.map(({ splitForm, lowercases }) => ({ splitForm: splitForm.length == 0 ? [] : [splitForm[0], ...splitForm.slice(1).flatMap((word) => ["_", word])], lowercases }));
-    const withoutUnderscoreForms = splicedForms.flatMap(({ splitForm, lowercases }) => combinationsWithout(splitForm, "_").map((comb): [string, { lowercases: number }] => [comb.join("_"), { lowercases }]));
+    const withoutUnderscoreForms = splicedForms.flatMap(({ splitForm, lowercases }) => combinationsWithout(splitForm, "_").map((comb): [string, { lowercases: number }] => [comb.join(""), { lowercases }]));
 
     const forms: Map<string, { lowercases: number }> = new Map();
 
@@ -1720,63 +1752,22 @@ function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
     return forms;
 }
 
-function buildLongForms(unitProps: UnitProps): Set<string> {
-    return buildForms(unitProps.forms, false);
-}
-
-function buildShortForms(unitProps: UnitProps): Set<string> {
-    return buildForms(unitProps.shortForms ?? [], true);
-}
-
-function buildLowercaseShortForms(unitProps: UnitProps): Set<string> {
-    const lowercaseForms: Set<string> = new Set();
-    for (const shortForm of buildShortForms(unitProps)) {
-        const formChars = [...shortForm];
-
-        const uppercaseIndices = [...formChars.keys()].filter((i) => formChars[i] != formChars[i].toLowerCase());
-
-        for (const comb of combinations(uppercaseIndices)) {
-            if (comb.length == 0) continue;
-
-            lowercaseForms.add(formChars.map((c, i) => comb.includes(i) ? c.toLowerCase() : c).join(""));
-        }
-    }
-
-    return lowercaseForms;
-}
-
-export function buildUnitReference(): Set<string> {
-    const long: Map<string, string> = new Map();
-    const short: Map<string, string> = new Map();
-    const lowercaseShort: Map<string, string> = new Map();
+export function buildUnitReference(): Map<string, { unitId: string, lowercases: number }[]> {
+    const ref: Map<string, { unitId: string, lowercases: number }[]> = new Map();
 
     for (const unit of UNIT_PROPS) {
-        for (const form of buildLongForms(unit)) {
-            if (long.has(form)) {
-                console.log("LONG CONTRADICTION: " + unit.id + " " + form);
-            } else {
-                long.set(form, unit.id);
-            }
-        }
+        for (const [form, { lowercases }] of buildForms(unit)) {
+            const found = ref.get(form);
 
-        for (const form of buildShortForms(unit)) {
-            if (long.has(form) && long.get(form) !== unit.id || short.has(form) && short.get(form) !== unit.id) {
-                console.log("SHORT CONTRADICTION: " + unit.id + " " + form);
+            if (found === undefined) {
+                ref.set(form, [{ unitId: unit.id, lowercases }]);
             } else {
-                short.set(form, unit.id);
-            }
-        }
-
-        for (const form of buildLowercaseShortForms(unit)) {
-            if (long.has(form) && long.get(form) !== unit.id || short.has(form) && short.get(form) !== unit.id || lowercaseShort.has(form) && lowercaseShort.get(form) !== unit.id) {
-                console.log("lowercase short contradiction: " + unit.id + " " + form);
-            } else {
-                lowercaseShort.set(form, unit.id);
+                found.push({ unitId: unit.id, lowercases });
             }
         }
     }
 
-    return new Set([...long.keys(), ...short.keys(), ...lowercaseShort.keys()]);
+    return ref;
 }
 
 const scaleRegExp = new RegExp([...Object.keys(SI_PREFIXES_SHORT), ...Object.keys(BINARY_PREFIXES_SHORT)].join("|"), "g");
