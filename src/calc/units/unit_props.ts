@@ -36,10 +36,33 @@ export type UnitWordProps = UnitWordPropsNoun | UnitWordPropsModifier;
 
 export type UnitFormProps = ReadonlyArray<UnitWordProps>;
 
-export interface UnitDisambiguatorProps {
-    readonly system: string;
+export interface UnitDisambiguatorProps<System> {
+    readonly system: System;
     readonly systemForms: ReadonlyArray<UnitFormProps>;
     readonly shortSystemForms?: ReadonlyArray<UnitFormProps>;
+}
+
+export type CalendarSystem = (
+    "common" | // 365 days / year
+    "leap" | // 366 days / year
+    "julian" | // 365.25 days / year
+    "gregorian" | // 365.2425 days/year
+    "mean_tropical" | // precise
+    "sidereal" | // precise
+    "synodic" | // precise
+    "short_month" | // 28 days / month
+    "hollow_month" | // 29 days / month
+    "full_month" | // 30 days / month
+    "long_month" // 31 days / month
+);
+
+export interface UnitDisambiguators {
+    readonly distance?: UnitDisambiguatorProps<"us_land" | "us_survey" | "nautical">;
+    readonly volume?: UnitDisambiguatorProps<"us" | "imperial">;
+    readonly weight?: UnitDisambiguatorProps<"troy" | "us">;
+    readonly quantity?: UnitDisambiguatorProps<"mass" | "force" | "volume">;
+    readonly ton?: UnitDisambiguatorProps<"si" | "short" | "long">;
+    readonly calendar?: UnitDisambiguatorProps<CalendarSystem>;
 }
 
 export interface UnitProps {
@@ -47,7 +70,7 @@ export interface UnitProps {
 
     readonly quantity: Quantity;
 
-    readonly disambiguators?: Readonly<Record<string, UnitDisambiguatorProps>>; // used to differentiate units with the same name
+    readonly disambiguators?: UnitDisambiguators; // used to differentiate units with the same name
 
     readonly forms: ReadonlyArray<UnitFormProps>;
     readonly shortForms?: ReadonlyArray<UnitFormProps>;
@@ -82,21 +105,21 @@ function simpleForms(formWords: string[]): UnitFormProps[] {
     return formWords.map((word) => [noun(word)]);
 }
 
-const US_LAND_SYSTEM = {
+const US_LAND_DISTANCE_SYSTEM = {
     distance: {
         system: "us_land",
         systemForms: [[modifier("united_states")], [modifier("statutory")], [modifier("statute")], [modifier("international")], [modifier("land")]],
         shortSystemForms: [[modifier("US")], [modifier("us")], [modifier("stat")], [modifier("intl")], [modifier("int")], [modifier("land")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
-const NAUTICAL_SYSTEM = {
+const NAUTICAL_DISTANCE_SYSTEM = {
     distance: {
         system: "nautical",
         systemForms: [[modifier("nautical")]],
         shortSystemForms: [[modifier("naut")], [modifier("n")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
 const US_VOLUME_SYSTEM = {
     volume: {
@@ -104,7 +127,7 @@ const US_VOLUME_SYSTEM = {
         systemForms: [[modifier("united_states")], [modifier("customary")]],
         shortSystemForms: [[modifier("US")], [modifier("us")], [modifier("cust")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
 const IMPERIAL_VOLUME_SYSTEM = {
     volume: {
@@ -112,7 +135,7 @@ const IMPERIAL_VOLUME_SYSTEM = {
         systemForms: [[modifier("imperial")]],
         shortSystemForms: [[modifier("imp")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
 const TROY_WEIGHT_SYSTEM = {
     weight: {
@@ -120,7 +143,7 @@ const TROY_WEIGHT_SYSTEM = {
         systemForms: [[modifier("troy")]],
         shortSystemForms: [[modifier("tr")], [modifier("t")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
 const US_WEIGHT_SYSTEM = {
     weight: {
@@ -128,7 +151,7 @@ const US_WEIGHT_SYSTEM = {
         systemForms: [[modifier("united_states")], [modifier("international")], [modifier("avoirdupois")]],
         shortSystemForms: [[modifier("US")], [modifier("us")], [modifier("intl")], [modifier("int")], [modifier("av")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
 const MASS_QUANTITY_SYSTEM = {
     quantity: {
@@ -136,7 +159,7 @@ const MASS_QUANTITY_SYSTEM = {
         systemForms: [[modifier("mass")]],
         shortSystemForms: [[modifier("m")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
 const WEIGHT_FORCE_QUANTITY_SYSTEM = {
     quantity: {
@@ -144,7 +167,7 @@ const WEIGHT_FORCE_QUANTITY_SYSTEM = {
         systemForms: [[modifier("weight")], [modifier("force")]],
         shortSystemForms: [[modifier("wght")], [modifier("wgt")], [modifier("wt")], [modifier("wt")], [modifier("w")], [modifier("f")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
 const FLUID_OUNCE_QUANTITY_SYSTEM = {
     quantity: {
@@ -152,41 +175,100 @@ const FLUID_OUNCE_QUANTITY_SYSTEM = {
         systemForms: [[modifier("fluid")]],
         shortSystemForms: [[modifier("fl")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
 const SHORT_TON_SYSTEM = {
-    quantity: {
-        system: "ton",
+    ton: {
+        system: "short",
         systemForms: [[modifier("short")]],
         shortSystemForms: [[modifier("sh")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
 const LONG_TON_SYSTEM = {
-    quantity: {
-        system: "ton",
+    ton: {
+        system: "long",
         systemForms: [[modifier("long")]],
         shortSystemForms: [[modifier("long")]],
     },
-} as const satisfies Partial<UnitProps["disambiguators"]>;
+} as const satisfies Partial<UnitDisambiguators>;
 
-// calendar systems:
-// month: 30 days, 29 days, lunar (synodic), OR year divided by 12
-// year: 365 days, 366 days, 365.25 days (julian), 365.2425 days (gregorian), mean tropical, sidereal, OR month times 12 (which is 360 days, 348 days, or 12 synodic months)
-// calendar systems (always 12 months / year):
-// - common: 365 days / year
-// - leap: 366 days / year
-// - julian: 365.25 days / year
-// - gregorian: 365.2425 days / year
-// - mean_tropical: precise days / year
-// - sidereal: precise days / year
-// - synodic: precise days / year
-// - month systems (overrides month but not year):
-// - full_month: 30 days / month
-// - hollow_month: 29 days / month
-// - short_month: 28 days / month
-// - long_month: 31 days / month
-// - synodic_month: precise days / month
+const COMMON_CALENDAR_SYSTEM = {
+    calendar: {
+        system: "common",
+        systemForms: [[modifier("common")]],
+    }
+} as const satisfies Partial<UnitDisambiguators>;
+
+const LEAP_CALENDAR_SYSTEM = {
+    calendar: {
+        system: "leap",
+        systemForms: [[modifier("leap")]],
+    }
+} as const satisfies Partial<UnitDisambiguators>;
+
+const JULIAN_CALENDAR_SYSTEM = {
+    calendar: {
+        system: "julian",
+        systemForms: [[modifier("julian")]],
+        shortSystemForms: [[modifier("jul")], [modifier("jul"), modifier("av")]],
+    }
+} as const satisfies Partial<UnitDisambiguators>;
+
+const GREGORIAN_CALENDAR_SYSTEM = {
+    calendar: {
+        system: "gregorian",
+        systemForms: [[modifier("gregorian")]],
+        shortSystemForms: [[modifier("greg")], [modifier("greg"), modifier("av")]],
+    }
+} as const satisfies Partial<UnitDisambiguators>;
+
+const MEAN_TROPICAL_CALENDAR_SYSTEM = {
+    calendar: {
+        system: "mean_tropical",
+        systemForms: [[modifier("mean"), modifier("tropical")], [modifier("solar")]],
+        shortSystemForms: [[modifier("trop")], [modifier("trop"), modifier("av")], [modifier("sol")], [modifier("sol"), modifier("av")]],
+    }
+} as const satisfies Partial<UnitDisambiguators>;
+
+const SIDEREAL_CALENDAR_SYSTEM = {
+    calendar: {
+        system: "sidereal",
+        systemForms: [[modifier("sidereal")]],
+        shortSystemForms: [[modifier("sr")]],
+    }
+} as const satisfies Partial<UnitDisambiguators>;
+
+const SYNODIC_CALENDAR_SYSTEM = {
+    calendar: {
+        system: "synodic",
+        systemForms: [[modifier("synodic")], [modifier("lunar")]],
+        shortSystemForms: [[modifier("syn")], [modifier("lun")], [modifier("lr")]],
+    }
+} as const satisfies Partial<UnitDisambiguators>;
+
+const MONTH_FORMS = {
+    forms: simpleForms(["month"]),
+    shortForms: simpleForms(["mo", "mos", "mon", "mons"]),
+} as const satisfies Partial<UnitProps>;
+
+const YEAR_FORMS = {
+    forms: simpleForms(["year"]),
+    shortForms: simpleForms(["a", "y", "yr", "yrs"]),
+} as const satisfies Partial<UnitProps>;
+
+const DECADE_FORMS = {
+    forms: simpleForms(["decade"]),
+    shortForms: simpleForms(["dec"]),
+} as const satisfies Partial<UnitProps>;
+
+const CENTURY_FORMS = {
+    forms: [[noun("century", { plurals: ["centuries"] })]],
+} as const satisfies Partial<UnitProps>;
+
+const MILLENNIUM_FORMS = {
+    forms: [[noun("millennium", { plurals: ["millennia"] })]],
+} as const satisfies Partial<UnitProps>;
 
 export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     // length
@@ -271,7 +353,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "length",
 
         disambiguators: {
-            ...US_LAND_SYSTEM,
+            ...US_LAND_DISTANCE_SYSTEM,
         },
 
         forms: simpleForms(["mile"]),
@@ -291,7 +373,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "length",
 
         disambiguators: {
-            ...US_LAND_SYSTEM,
+            ...US_LAND_DISTANCE_SYSTEM,
         },
 
         forms: simpleForms(["league"]),
@@ -303,7 +385,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "length",
 
         disambiguators: {
-            ...NAUTICAL_SYSTEM,
+            ...NAUTICAL_DISTANCE_SYSTEM,
         },
 
         forms: [[noun("mile")]],
@@ -316,7 +398,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "length",
 
         disambiguators: {
-            ...NAUTICAL_SYSTEM,
+            ...NAUTICAL_DISTANCE_SYSTEM,
         },
 
         forms: [[noun("league")]],
@@ -916,42 +998,435 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         shortForms: simpleForms(["fn"]),
     },
     {
-        id: "month",
-
-        quantity: "time", // todo: add calendars, which would work like systems (30-day month, 365-day year, 365.25-day year, lunar, gregorian)
-
-        forms: simpleForms(["month"]),
-        shortForms: simpleForms(["mo", "mos", "mon", "mons"]),
-    },
-    {
-        id: "year",
+        id: "common_month",
 
         quantity: "time",
 
-        forms: simpleForms(["year"]),
-        shortForms: simpleForms(["a", "y", "yr", "yrs"]),
+        disambiguators: {
+            ...COMMON_CALENDAR_SYSTEM,
+        },
+
+        ...MONTH_FORMS,
     },
     {
-        id: "decade",
+        id: "common_year",
 
         quantity: "time",
 
-        forms: simpleForms(["decade"]),
-        shortForms: simpleForms(["dec"]),
+        disambiguators: {
+            ...COMMON_CALENDAR_SYSTEM,
+        },
+
+        ...YEAR_FORMS,
     },
     {
-        id: "century",
+        id: "leap_month",
 
         quantity: "time",
 
-        forms: [[noun("century", { plurals: ["centuries"] })]],
+        disambiguators: {
+            ...LEAP_CALENDAR_SYSTEM,
+        },
+
+        ...MONTH_FORMS,
     },
     {
-        id: "millennium",
+        id: "leap_year",
 
         quantity: "time",
 
-        forms: [[noun("millennium", { plurals: ["millennia"] })]],
+        disambiguators: {
+            ...LEAP_CALENDAR_SYSTEM,
+        },
+
+        ...YEAR_FORMS,
+    },
+    {
+        id: "julian_month",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...JULIAN_CALENDAR_SYSTEM,
+        },
+
+        ...MONTH_FORMS,
+    },
+    {
+        id: "julian_year",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...JULIAN_CALENDAR_SYSTEM,
+        },
+
+        ...YEAR_FORMS,
+    },
+    {
+        id: "julian_decade",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...JULIAN_CALENDAR_SYSTEM,
+        },
+
+        ...DECADE_FORMS,
+    },
+    {
+        id: "julian_century",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...JULIAN_CALENDAR_SYSTEM,
+        },
+
+        ...CENTURY_FORMS,
+    },
+    {
+        id: "julian_millennium",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...JULIAN_CALENDAR_SYSTEM,
+        },
+
+        ...MILLENNIUM_FORMS,
+    },
+    {
+        id: "gregorian_month",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...GREGORIAN_CALENDAR_SYSTEM,
+        },
+
+        ...MONTH_FORMS,
+    },
+    {
+        id: "gregorian_year",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...GREGORIAN_CALENDAR_SYSTEM,
+        },
+
+        ...YEAR_FORMS,
+    },
+    {
+        id: "gregorian_decade",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...GREGORIAN_CALENDAR_SYSTEM,
+        },
+
+        ...DECADE_FORMS,
+    },
+    {
+        id: "gregorian_century",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...GREGORIAN_CALENDAR_SYSTEM,
+        },
+
+        ...CENTURY_FORMS,
+    },
+    {
+        id: "gregorian_millennium",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...GREGORIAN_CALENDAR_SYSTEM,
+        },
+
+        ...MILLENNIUM_FORMS,
+    },
+    {
+        id: "mean_tropical_month",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...MEAN_TROPICAL_CALENDAR_SYSTEM,
+        },
+
+        ...MONTH_FORMS,
+    },
+    {
+        id: "mean_tropical_year",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...MEAN_TROPICAL_CALENDAR_SYSTEM,
+        },
+
+        ...YEAR_FORMS,
+    },
+    {
+        id: "mean_tropical_decade",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...MEAN_TROPICAL_CALENDAR_SYSTEM,
+        },
+
+        ...DECADE_FORMS,
+    },
+    {
+        id: "mean_tropical_century",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...MEAN_TROPICAL_CALENDAR_SYSTEM,
+        },
+
+        ...CENTURY_FORMS,
+    },
+    {
+        id: "mean_tropical_millennium",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...MEAN_TROPICAL_CALENDAR_SYSTEM,
+        },
+
+        ...MILLENNIUM_FORMS,
+    },
+    {
+        id: "sidereal_month",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SIDEREAL_CALENDAR_SYSTEM,
+        },
+
+        ...MONTH_FORMS,
+    },
+    {
+        id: "sidereal_year",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SIDEREAL_CALENDAR_SYSTEM,
+        },
+
+        ...YEAR_FORMS,
+    },
+    {
+        id: "sidereal_decade",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SIDEREAL_CALENDAR_SYSTEM,
+        },
+
+        ...DECADE_FORMS,
+    },
+    {
+        id: "sidereal_century",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SIDEREAL_CALENDAR_SYSTEM,
+        },
+
+        ...CENTURY_FORMS,
+    },
+    {
+        id: "sidereal_millennium",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SIDEREAL_CALENDAR_SYSTEM,
+        },
+
+        ...MILLENNIUM_FORMS,
+    },
+    {
+        id: "synodic_month",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SYNODIC_CALENDAR_SYSTEM,
+        },
+
+        ...MONTH_FORMS,
+    },
+    {
+        id: "synodic_year",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SYNODIC_CALENDAR_SYSTEM,
+        },
+
+        ...YEAR_FORMS,
+    },
+    {
+        id: "synodic_decade",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SYNODIC_CALENDAR_SYSTEM,
+        },
+
+        ...DECADE_FORMS,
+    },
+    {
+        id: "synodic_century",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SYNODIC_CALENDAR_SYSTEM,
+        },
+
+        ...CENTURY_FORMS,
+    },
+    {
+        id: "synodic_millennium",
+
+        quantity: "time",
+
+        disambiguators: {
+            ...SYNODIC_CALENDAR_SYSTEM,
+        },
+
+        ...MILLENNIUM_FORMS,
+    },
+    {
+        id: "short_month",
+
+        quantity: "time",
+
+        disambiguators: {
+            calendar: {
+                system: "short_month",
+                systemForms: [[modifier("short")]],
+            },
+        },
+
+        ...MONTH_FORMS,
+    },
+    {
+        id: "short_month_year",
+
+        quantity: "time",
+
+        disambiguators: {
+            calendar: {
+                system: "short_month",
+                systemForms: [[modifier("short"), modifier("month")], [modifier("short"), modifier("months")]],
+            },
+        },
+
+        ...YEAR_FORMS,
+    },
+    {
+        id: "hollow_month",
+
+        quantity: "time",
+
+        disambiguators: {
+            calendar: {
+                system: "hollow_month",
+                systemForms: [[modifier("hollow")]],
+            },
+        },
+
+        ...MONTH_FORMS,
+    },
+    {
+        id: "hollow_month_year",
+
+        quantity: "time",
+
+        disambiguators: {
+            calendar: {
+                system: "hollow_month",
+                systemForms: [[modifier("hollow"), modifier("month")], [modifier("hollow"), modifier("months")]],
+            },
+        },
+
+        ...YEAR_FORMS,
+    },
+    {
+        id: "full_month",
+
+        quantity: "time",
+
+        disambiguators: {
+            calendar: {
+                system: "full_month",
+                systemForms: [[modifier("full")]],
+            },
+        },
+
+        ...MONTH_FORMS,
+    },
+    {
+        id: "full_month_year",
+
+        quantity: "time",
+
+        disambiguators: {
+            calendar: {
+                system: "full_month",
+                systemForms: [[modifier("full"), modifier("month")], [modifier("full"), modifier("months")]],
+            },
+        },
+
+        ...YEAR_FORMS,
+    },
+    {
+        id: "long_month",
+
+        quantity: "time",
+
+        disambiguators: {
+            calendar: {
+                system: "long_month",
+                systemForms: [[modifier("long")]],
+            },
+        },
+
+        ...MONTH_FORMS,
+    },
+    {
+        id: "long_month_year",
+
+        quantity: "time",
+
+        disambiguators: {
+            calendar: {
+                system: "long_month",
+                systemForms: [[modifier("long"), modifier("month")], [modifier("long"), modifier("months")]],
+            },
+        },
+
+        ...YEAR_FORMS,
     },
     {
         id: "planck_time",
