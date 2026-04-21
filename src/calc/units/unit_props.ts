@@ -60,7 +60,6 @@ export interface UnitDisambiguators {
     readonly distance?: UnitDisambiguatorProps<"us_land" | "us_survey" | "nautical">;
     readonly volume?: UnitDisambiguatorProps<"us" | "imperial">;
     readonly weight?: UnitDisambiguatorProps<"troy" | "us">;
-    readonly quantity?: UnitDisambiguatorProps<"mass" | "force" | "volume">;
     readonly ton?: UnitDisambiguatorProps<"si" | "short" | "long">;
     readonly calendar?: UnitDisambiguatorProps<CalendarSystem>;
 }
@@ -150,30 +149,6 @@ const US_WEIGHT_SYSTEM = {
         system: "us",
         systemForms: [[modifier("united_states")], [modifier("international")], [modifier("avoirdupois")]],
         shortSystemForms: [[modifier("US")], [modifier("us")], [modifier("intl")], [modifier("int")], [modifier("av")]],
-    },
-} as const satisfies Partial<UnitDisambiguators>;
-
-const MASS_QUANTITY_SYSTEM = {
-    quantity: {
-        system: "mass",
-        systemForms: [[modifier("mass")]],
-        shortSystemForms: [[modifier("m")]],
-    },
-} as const satisfies Partial<UnitDisambiguators>;
-
-const WEIGHT_FORCE_QUANTITY_SYSTEM = {
-    quantity: {
-        system: "force",
-        systemForms: [[modifier("weight")], [modifier("force")]],
-        shortSystemForms: [[modifier("wght")], [modifier("wgt")], [modifier("wt")], [modifier("wt")], [modifier("w")], [modifier("f")]],
-    },
-} as const satisfies Partial<UnitDisambiguators>;
-
-const FLUID_OUNCE_QUANTITY_SYSTEM = {
-    quantity: {
-        system: "volume",
-        systemForms: [[modifier("fluid")]],
-        shortSystemForms: [[modifier("fl")]],
     },
 } as const satisfies Partial<UnitDisambiguators>;
 
@@ -564,12 +539,11 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "volume",
 
         disambiguators: {
-            ...FLUID_OUNCE_QUANTITY_SYSTEM,
             ...US_VOLUME_SYSTEM,
         },
 
-        forms: simpleForms(["ounce"]),
-        shortForms: simpleForms(["oz", "ozs"]),
+        forms: [[modifier("fluid"), noun("ounce")], [modifier("fl"), noun("ounce")], [modifier("fluid"), noun("oz")], [modifier("fluid"), noun("ozs")]],
+        shortForms: [[modifier("fl"), noun("oz")], [modifier("fl"), noun("ozs")]],
     },
     {
         id: "us_tablespoon",
@@ -649,12 +623,11 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "volume",
 
         disambiguators: {
-            ...FLUID_OUNCE_QUANTITY_SYSTEM,
             ...IMPERIAL_VOLUME_SYSTEM,
         },
 
-        forms: simpleForms(["ounce"]),
-        shortForms: simpleForms(["oz", "ozs"]),
+        forms: [[modifier("fluid"), noun("ounce")], [modifier("fl"), noun("ounce")], [modifier("fluid"), noun("oz")], [modifier("fluid"), noun("ozs")]],
+        shortForms: [[modifier("fl"), noun("oz")], [modifier("fl"), noun("ozs")]],
     },
     {
         id: "imperial_tablespoon",
@@ -806,7 +779,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         disambiguators: {
             ton: {
                 system: "si",
-                systemForms: simpleForms(["metric"]),
+                systemForms: [[modifier("metric")]],
             },
         },
 
@@ -814,12 +787,11 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         shortForms: simpleForms(["t"]),
     },
     {
-        id: "ounce_mass",
+        id: "ounce",
 
         quantity: "mass",
 
         disambiguators: {
-            ...MASS_QUANTITY_SYSTEM,
             ...US_WEIGHT_SYSTEM,
         },
 
@@ -827,12 +799,11 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         shortForms: simpleForms(["oz", "ozs"]),
     },
     {
-        id: "pound_mass",
+        id: "pound",
 
         quantity: "mass",
 
         disambiguators: {
-            ...MASS_QUANTITY_SYSTEM,
             ...US_WEIGHT_SYSTEM,
         },
 
@@ -840,12 +811,11 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         shortForms: simpleForms(["lb", "lbs"]),
     },
     {
-        id: "stone_mass",
+        id: "stone",
 
         quantity: "mass",
 
         disambiguators: {
-            ...MASS_QUANTITY_SYSTEM,
             ...US_WEIGHT_SYSTEM,
         },
 
@@ -853,32 +823,31 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         shortForms: simpleForms(["st"]),
     },
     {
-        id: "short_ton_mass",
+        id: "short_ton",
 
         quantity: "mass",
 
         disambiguators: {
-            ...MASS_QUANTITY_SYSTEM,
             ...US_WEIGHT_SYSTEM,
             ...SHORT_TON_SYSTEM,
         },
 
-        forms: [[noun("ton")]],
-        shortForms: [[noun("tn")]],
+        forms: simpleForms(["ton"]),
+        shortForms: simpleForms(["tn"]),
     },
     {
-        id: "long_ton_mass",
+        id: "long_ton",
 
         quantity: "mass",
 
         disambiguators: {
-            ...MASS_QUANTITY_SYSTEM,
             ...US_WEIGHT_SYSTEM,
             ...LONG_TON_SYSTEM,
         },
 
-        forms: [[noun("ton")]],
-        shortForms: [[noun("tn")]],
+        forms: simpleForms(["ton"]),
+        shortForms: simpleForms(["tn"]),
+        rawShortForms: simpleForms(["LT"]),
     },
     {
         id: "grain",
@@ -886,7 +855,6 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "mass",
 
         disambiguators: {
-            ...MASS_QUANTITY_SYSTEM,
             ...TROY_WEIGHT_SYSTEM,
         },
 
@@ -899,7 +867,6 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "mass",
 
         disambiguators: {
-            ...MASS_QUANTITY_SYSTEM,
             ...TROY_WEIGHT_SYSTEM,
         },
 
@@ -912,7 +879,6 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "mass",
 
         disambiguators: {
-            ...MASS_QUANTITY_SYSTEM,
             ...TROY_WEIGHT_SYSTEM,
         },
 
@@ -925,7 +891,6 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         quantity: "mass",
 
         disambiguators: {
-            ...MASS_QUANTITY_SYSTEM,
             ...TROY_WEIGHT_SYSTEM,
         },
 
@@ -1472,6 +1437,14 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         forms: [[modifier("standard"), noun("gravity", { plurals: ["gravities"] })]]
     },
+    {
+        id: "gal_acceleration",
+
+        quantity: "acceleration",
+
+        forms: simpleForms(["galileo"]),
+        shortForms: simpleForms(["Gal"]),
+    },
 
     // weight/force
     {
@@ -1489,73 +1462,6 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         forms: simpleForms(["dyne"]),
         shortForms: simpleForms(["dyn"]),
-    },
-    {
-        id: "ounce",
-
-        quantity: "force",
-
-        disambiguators: {
-            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
-            ...US_WEIGHT_SYSTEM,
-        },
-
-        forms: simpleForms(["ounce"]),
-        shortForms: simpleForms(["oz", "ozs"]),
-    },
-    {
-        id: "pound",
-
-        quantity: "force",
-
-        disambiguators: {
-            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
-            ...US_WEIGHT_SYSTEM,
-        },
-
-        forms: simpleForms(["pound"]),
-        shortForms: simpleForms(["lb", "lbs"]),
-    },
-    {
-        id: "stone",
-
-        quantity: "force",
-
-        disambiguators: {
-            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
-            ...US_WEIGHT_SYSTEM,
-        },
-
-        forms: simpleForms(["stone"]),
-        shortForms: simpleForms(["st"]),
-    },
-    {
-        id: "short_ton",
-
-        quantity: "force",
-
-        disambiguators: {
-            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
-            ...US_WEIGHT_SYSTEM,
-            ...SHORT_TON_SYSTEM,
-        },
-
-        forms: [[noun("ton")]],
-        shortForms: [[noun("tn")]],
-    },
-    {
-        id: "long_ton",
-
-        quantity: "force",
-
-        disambiguators: {
-            ...WEIGHT_FORCE_QUANTITY_SYSTEM,
-            ...US_WEIGHT_SYSTEM,
-            ...LONG_TON_SYSTEM,
-        },
-
-        forms: [[noun("ton")]],
-        shortForms: [[noun("tn")]],
     },
     {
         id: "poundal",
@@ -1632,6 +1538,14 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         forms: simpleForms(["joule"]),
         shortForms: simpleForms(["J"]),
+    },
+    {
+        id: "erg",
+
+        quantity: "energy",
+
+        forms: simpleForms(["erg"]),
+        shortForms: simpleForms(["erg"]),
     },
     {
         id: "electronvolt",

@@ -194,3 +194,5 @@ export function buildUnitReference(): Map<string, { unitId: string, lowercases: 
 }
 
 export const ref = buildUnitReference();
+
+console.log(ref);

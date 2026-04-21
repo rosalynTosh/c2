@@ -50,6 +50,7 @@ export function parseUnit(unit: string) {
     let parseScale: ParserStage;
     let parseLight: ParserStage;
     let parseSqOrCb: ParserStage;
+    let parseWeightForce: ParserStage;
     let parseDisp: ParserStage;
 
     function parseBaseUnit(parts: string[], mods: Map<string, Mod | null>) {
@@ -80,7 +81,8 @@ export function parseUnit(unit: string) {
         /(?:H2[O0]|Hg|water|mercury)_?displacement/gi,
         /of_?(?:H2[O0]|Hg|water|mercury)_?displacement/gi,
     ], (lo, _hi) => lo != "", parseBaseUnit);
-    parseSqOrCb = buildParserStage("sqOrCb", null, [/sq/gi, /square/gi, /c[bu]/gi, /cubic/gi], (lo, hi) => lo != "" || hi != "", parseDisp);
+    parseWeightForce = buildParserStage("weightForce", null, [/weight/gi, /wg?h?t/g, /w/g, /force/gi, /f/g], (lo, _hi) => lo != "", parseDisp);
+    parseSqOrCb = buildParserStage("sqOrCb", null, [/sq/gi, /square/gi, /c[bu]/gi, /cubic/gi], (lo, hi) => lo != "" || hi != "", parseWeightForce);
     parseLight = buildParserStage("light", null, [/l/g, /light/gi], (_lo, hi, modStr) => modStr == "l" ? hi.match(/^[^_]/) !== null : hi != "", parseSqOrCb);
     parseScale = buildParserStage("scale", null, scaleRegExps, (_lo, hi, modStr) => (modStr in SI_PREFIXES_LONG || modStr in BINARY_PREFIXES_LONG) ? hi != "" : hi.match(/^[^_]/) !== null, parseLight);
 
