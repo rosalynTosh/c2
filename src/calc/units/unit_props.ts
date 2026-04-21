@@ -1,7 +1,7 @@
 export type Quantity = (
     "length" | "area" | "volume" |
     "angle" | "solid_angle" |
-    "mass" |
+    "mass" | "density" |
     "time" | "frequency" | "speed" | "acceleration" |
     "force" | "pressure" |
     "energy" | "power" |
@@ -65,8 +65,6 @@ export interface UnitDisambiguators {
 }
 
 export interface UnitProps {
-    readonly id: string;
-
     readonly quantity: Quantity;
 
     readonly disambiguators?: UnitDisambiguators; // used to differentiate units with the same name
@@ -245,11 +243,9 @@ const MILLENNIUM_FORMS = {
     forms: [[noun("millennium", { plurals: ["millennia"] })]],
 } as const satisfies Partial<UnitProps>;
 
-export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
+export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
     // length
-    {
-        id: "angstrom",
-
+    "angstrom": {
         quantity: "length",
 
         forms: [[noun("angstrom", {
@@ -260,71 +256,53 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         })]],
         shortForms: simpleForms(["Å"]),
     },
-    {
-        id: "fermi",
-
+    "fermi": {
         quantity: "length",
 
         forms: simpleForms(["fermi"]),
     },
-    {
-        id: "micron",
-
+    "micron": {
         quantity: "length",
 
         forms: simpleForms(["micron"]),
         shortForms: simpleForms(["µ"]),
     },
-    {
-        id: "meter",
-
+    "meter": {
         quantity: "length",
 
         forms: simpleForms(["meter", "metre"]),
         shortForms: simpleForms(["m"]),
     },
-    {
-        id: "mil",
-
+    "mil": {
         quantity: "length",
 
         forms: simpleForms(["mil", "thou"]),
     },
-    {
-        id: "inch",
-
+    "inch": {
         quantity: "length",
 
         forms: [[noun("inch", { plurals: ["inches"] })]],
         shortForms: simpleForms(["in", "ins"]),
     },
-    {
-        id: "foot",
-
+    "foot": {
         quantity: "length",
 
         forms: [[noun("foot", { plurals: ["feet"] })]],
         shortForms: simpleForms(["ft"]),
     },
-    {
-        id: "yard",
-
+    "yard": {
         quantity: "length",
 
         forms: simpleForms(["yard"]),
         shortForms: simpleForms(["yd", "yds"]),
     },
-    {
-        id: "furlong",
-
+    "furlong": {
         quantity: "length",
 
         forms: simpleForms(["furlong"]),
         shortForms: simpleForms(["fur"]),
     },
-    {
-        id: "mile",
-
+    "mile": {
         quantity: "length",
 
         disambiguators: {
@@ -334,17 +312,13 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["mile"]),
         shortForms: simpleForms(["mi"]),
     },
-    {
-        id: "fathom",
-
+    "fathom": {
         quantity: "length",
 
         forms: simpleForms(["fathom"]),
         shortForms: simpleForms(["ftm"]),
     },
-    {
-        id: "league",
-
+    "league": {
         quantity: "length",
 
         disambiguators: {
@@ -354,9 +328,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["league"]),
         shortForms: simpleForms(["lea"]),
     },
-    {
-        id: "nautical_mile",
-
+    "nautical_mile": {
         quantity: "length",
 
         disambiguators: {
@@ -367,9 +339,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         shortForms: simpleForms(["mi"]),
         rawShortForms: ["NM"],
     },
-    {
-        id: "nautical_league",
-
+    "nautical_league": {
         quantity: "length",
 
         disambiguators: {
@@ -380,114 +350,86 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         shortForms: simpleForms(["lea"]),
         rawShortForms: ["NL"],
     },
-    {
-        id: "link",
-
+    "link": {
         quantity: "length",
 
         forms: simpleForms(["link"]),
         shortForms: simpleForms(["lnk"]),
     },
-    {
-        id: "chain",
-
+    "chain": {
         quantity: "length",
 
         forms: simpleForms(["chain"]),
         shortForms: simpleForms(["ch"]),
     },
-    {
-        id: "rod",
-
+    "rod": {
         quantity: "length",
 
         forms: simpleForms(["rod"]),
         shortForms: simpleForms(["rd"]),
     },
-    {
-        id: "parsec",
-
+    "parsec": {
         quantity: "length",
 
         forms: simpleForms(["parsec"]),
         shortForms: simpleForms(["pc"]),
     },
-    {
-        id: "astronomical_unit",
-
+    "astronomical_unit": {
         quantity: "length",
 
         forms: [[modifier("astronomical"), noun("unit")]],
         shortForms: simpleForms(["au"]),
     },
-    {
-        id: "pixel",
-
+    "pixel": {
         quantity: "length",
 
         forms: simpleForms(["pixel"]),
         shortForms: simpleForms(["px"]),
     },
-    {
-        id: "point",
-
+    "point": {
         quantity: "length",
 
         forms: simpleForms(["point"]),
         shortForms: simpleForms(["pt", "pts"]),
     },
-    {
-        id: "planck_length",
-
+    "planck_length": {
         quantity: "length",
 
         forms: [[modifier("planck"), noun("length")]],
     },
-    {
-        id: "reduced_planck_length",
-
+    "reduced_planck_length": {
         quantity: "length",
 
         forms: [[modifier("reduced"), modifier("planck"), noun("length")]],
     },
 
     // area
-    {
-        id: "hectare",
-
+    "hectare": {
         quantity: "area",
 
         forms: simpleForms(["hectare"]),
         shortForms: simpleForms(["ha"]),
     },
-    {
-        id: "acre",
-
+    "acre": {
         quantity: "area",
 
         forms: simpleForms(["acre"]),
         shortForms: simpleForms(["ac"]),
     },
-    {
-        id: "barn",
-
+    "barn": {
         quantity: "area",
 
         forms: simpleForms(["barn"]),
     },
 
     // volume
-    {
-        id: "liter",
-
+    "liter": {
         quantity: "volume",
 
         forms: simpleForms(["liter", "litre"]),
         shortForms: simpleForms(["L"]),
     },
-    {
-        id: "us_gallon",
-
+    "us_gallon": {
         quantity: "volume",
 
         disambiguators: {
@@ -497,9 +439,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["gallon"]),
         shortForms: simpleForms(["gal", "gals"]),
     },
-    {
-        id: "us_quart",
-
+    "us_quart": {
         quantity: "volume",
 
         disambiguators: {
@@ -509,9 +449,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["quart"]),
         shortForms: simpleForms(["qt", "qts"]),
     },
-    {
-        id: "us_pint",
-
+    "us_pint": {
         quantity: "volume",
 
         disambiguators: {
@@ -521,9 +459,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["pint"]),
         shortForms: simpleForms(["pt", "pts"]),
     },
-    {
-        id: "us_cup",
-
+    "us_cup": {
         quantity: "volume",
 
         disambiguators: {
@@ -533,9 +469,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["cup"]),
         shortForms: simpleForms(["c", "cup", "cups"]),
     },
-    {
-        id: "us_fluid_ounce",
-
+    "us_fluid_ounce": {
         quantity: "volume",
 
         disambiguators: {
@@ -545,9 +479,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: [[modifier("fluid"), noun("ounce")], [modifier("fl"), noun("ounce")], [modifier("fluid"), noun("oz")], [modifier("fluid"), noun("ozs")]],
         shortForms: [[modifier("fl"), noun("oz")], [modifier("fl"), noun("ozs")]],
     },
-    {
-        id: "us_tablespoon",
-
+    "us_tablespoon": {
         quantity: "volume",
 
         disambiguators: {
@@ -557,9 +489,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: [[modifier("table"), noun("spoon")]],
         shortForms: simpleForms(["tbsp", "tbsps"]),
     },
-    {
-        id: "us_teaspoon",
-
+    "us_teaspoon": {
         quantity: "volume",
 
         disambiguators: {
@@ -569,9 +499,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: [[modifier("tea"), noun("spoon")]],
         shortForms: simpleForms(["tsp", "tsps"]),
     },
-    {
-        id: "imperial_gallon",
-
+    "imperial_gallon": {
         quantity: "volume",
 
         disambiguators: {
@@ -581,9 +509,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["gallon"]),
         shortForms: simpleForms(["gal", "gals"]),
     },
-    {
-        id: "imperial_quart",
-
+    "imperial_quart": {
         quantity: "volume",
 
         disambiguators: {
@@ -593,9 +519,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["quart"]),
         shortForms: simpleForms(["qt", "qts"]),
     },
-    {
-        id: "imperial_pint",
-
+    "imperial_pint": {
         quantity: "volume",
 
         disambiguators: {
@@ -605,9 +529,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["pint"]),
         shortForms: simpleForms(["pt", "pts"]),
     },
-    {
-        id: "imperial_cup",
-
+    "imperial_cup": {
         quantity: "volume",
 
         disambiguators: {
@@ -617,9 +539,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["cup"]),
         shortForms: simpleForms(["c", "cup", "cups"]),
     },
-    {
-        id: "imperial_fluid_ounce",
-
+    "imperial_fluid_ounce": {
         quantity: "volume",
 
         disambiguators: {
@@ -629,9 +549,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: [[modifier("fluid"), noun("ounce")], [modifier("fl"), noun("ounce")], [modifier("fluid"), noun("oz")], [modifier("fluid"), noun("ozs")]],
         shortForms: [[modifier("fl"), noun("oz")], [modifier("fl"), noun("ozs")]],
     },
-    {
-        id: "imperial_tablespoon",
-
+    "imperial_tablespoon": {
         quantity: "volume",
 
         disambiguators: {
@@ -641,9 +559,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: [[modifier("table"), noun("spoon")]],
         shortForms: simpleForms(["tbsp", "tbsps"]),
     },
-    {
-        id: "imperial_teaspoon",
-
+    "imperial_teaspoon": {
         quantity: "volume",
 
         disambiguators: {
@@ -653,33 +569,25 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: [[modifier("tea"), noun("spoon")]],
         shortForms: simpleForms(["tsp", "tsps"]),
     },
-    {
-        id: "barrel",
-
+    "barrel": {
         quantity: "volume",
 
         forms: simpleForms(["barrel"]),
         shortForms: simpleForms(["bl", "bbl"]),
     },
-    {
-        id: "board_foot",
-
+    "board_foot": {
         quantity: "volume",
 
         forms: [[modifier("board"), noun("foot")]],
         shortForms: [[modifier("bd"), noun("ft")]],
     },
-    {
-        id: "cord",
-
+    "cord": {
         quantity: "volume",
 
         forms: simpleForms(["cord"]),
         shortForms: simpleForms(["cord"]),
     },
-    {
-        id: "bushel",
-
+    "bushel": {
         quantity: "volume",
 
         forms: simpleForms(["bushel"]),
@@ -687,49 +595,37 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // plane angle
-    {
-        id: "radian",
-
+    "radian": {
         quantity: "angle",
 
         forms: simpleForms(["radian"]),
         shortForms: simpleForms(["rad"]),
     },
-    {
-        id: "revolution",
-
+    "revolution": {
         quantity: "angle",
 
         forms: simpleForms(["revolution"]),
         shortForms: simpleForms(["rev", "revs"]),
     },
-    {
-        id: "degree_of_arc",
-
+    "degree_of_arc": {
         quantity: "angle",
 
         forms: [[noun("degree")], [noun("degree"), modifier("of arc")]],
         shortForms: simpleForms(["°", "deg", "degs"]),
     },
-    {
-        id: "arcminute",
-
+    "arcminute": {
         quantity: "angle",
 
         forms: [[noun("minute"), modifier("of arc")]],
         shortForms: simpleForms(["MOA", "MoA", "moa", "'"]),
     },
-    {
-        id: "arcsecond",
-
+    "arcsecond": {
         quantity: "angle",
 
         forms: [[noun("second"), modifier("of arc")]],
         shortForms: simpleForms(["\""]),
     },
-    {
-        id: "grad",
-
+    "grad": {
         quantity: "angle",
 
         forms: simpleForms(["grad"]),
@@ -737,17 +633,13 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // solid angle
-    {
-        id: "steradian",
-
+    "steradian": {
         quantity: "solid_angle",
 
         forms: simpleForms(["steradian"]),
         shortForms: simpleForms(["sr"]),
     },
-    {
-        id: "spat",
-
+    "spat": {
         quantity: "solid_angle",
 
         forms: simpleForms(["spat"]),
@@ -755,25 +647,19 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // mass
-    {
-        id: "gram",
-
+    "gram": {
         quantity: "mass",
 
         forms: simpleForms(["gram", "gramme"]),
         shortForms: simpleForms(["g"]),
     },
-    {
-        id: "carat",
-
+    "carat": {
         quantity: "mass",
 
         forms: simpleForms(["carat"]),
         shortForms: simpleForms(["ct"]),
     },
-    {
-        id: "metric_ton",
-
+    "metric_ton": {
         quantity: "mass",
 
         disambiguators: {
@@ -786,9 +672,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["ton", "tonne"]),
         shortForms: simpleForms(["t"]),
     },
-    {
-        id: "ounce",
-
+    "ounce": {
         quantity: "mass",
 
         disambiguators: {
@@ -798,9 +682,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["ounce"]),
         shortForms: simpleForms(["oz", "ozs"]),
     },
-    {
-        id: "pound",
-
+    "pound": {
         quantity: "mass",
 
         disambiguators: {
@@ -810,9 +692,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["pound"]),
         shortForms: simpleForms(["lb", "lbs"]),
     },
-    {
-        id: "stone",
-
+    "stone": {
         quantity: "mass",
 
         disambiguators: {
@@ -822,9 +702,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["stone"]),
         shortForms: simpleForms(["st"]),
     },
-    {
-        id: "short_ton",
-
+    "short_ton": {
         quantity: "mass",
 
         disambiguators: {
@@ -835,9 +713,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["ton"]),
         shortForms: simpleForms(["tn"]),
     },
-    {
-        id: "long_ton",
-
+    "long_ton": {
         quantity: "mass",
 
         disambiguators: {
@@ -849,9 +725,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         shortForms: simpleForms(["tn"]),
         rawShortForms: ["LT"],
     },
-    {
-        id: "grain",
-
+    "grain": {
         quantity: "mass",
 
         disambiguators: {
@@ -861,9 +735,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["grain"]),
         shortForms: simpleForms(["gr"]),
     },
-    {
-        id: "pennyweight",
-
+    "pennyweight": {
         quantity: "mass",
 
         disambiguators: {
@@ -873,9 +745,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["pennyweight"]),
         shortForms: simpleForms(["dwt", "dwts", "pwt", "pwts"]),
     },
-    {
-        id: "troy_ounce",
-
+    "troy_ounce": {
         quantity: "mass",
 
         disambiguators: {
@@ -885,9 +755,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["ounce"]),
         shortForms: simpleForms(["oz", "ozs"]),
     },
-    {
-        id: "troy_pound",
-
+    "troy_pound": {
         quantity: "mass",
 
         disambiguators: {
@@ -897,74 +765,68 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         forms: simpleForms(["pound"]),
         shortForms: simpleForms(["lb", "lbs"]),
     },
-    {
-        id: "slug",
-
+    "slug": {
         quantity: "mass",
 
         forms: simpleForms(["slug"]),
     },
-    {
-        id: "atomic_mass_unit",
-
+    "atomic_mass_unit": {
         quantity: "mass",
 
         forms: [[modifier("atomic"), modifier("mass"), noun("unit")], [noun("dalton")]],
         shortForms: simpleForms(["u", "AMU", "amu", "Da"]),
     },
 
-    // time
-    {
-        id: "second",
+    // density
+    "density_H2O": {
+        quantity: "density",
 
+        forms: [[noun("density"), modifier("of water")], [noun("density"), modifier("of h2o")], [noun("density"), modifier("of h20")]],
+    },
+    "density_Hg": {
+        quantity: "density",
+
+        forms: [[noun("density"), modifier("of mercury")], [noun("density"), modifier("of hg")]],
+    },
+
+    // time
+    "second": {
         quantity: "time",
 
         forms: simpleForms(["second"]),
         shortForms: simpleForms(["s", "sec", "secs"]),
     },
-    {
-        id: "minute",
-
+    "minute": {
         quantity: "time",
 
         forms: simpleForms(["minute"]),
         shortForms: simpleForms(["min", "mins"]),
     },
-    {
-        id: "hour",
-
+    "hour": {
         quantity: "time",
 
         forms: simpleForms(["hour"]),
         shortForms: simpleForms(["h", "hr", "hrs"]),
     },
-    {
-        id: "day",
-
+    "day": {
         quantity: "time",
 
         forms: simpleForms(["day"]),
         shortForms: simpleForms(["d"]),
     },
-    {
-        id: "week",
-
+    "week": {
         quantity: "time",
 
         forms: simpleForms(["week"]),
         shortForms: simpleForms(["wk", "wks"]),
     },
-    {
-        id: "fortnight",
-
+    "fortnight": {
         quantity: "time",
 
         forms: simpleForms(["fortnight"]),
         shortForms: simpleForms(["fn"]),
     },
-    {
-        id: "common_month",
-
+    "common_month": {
         quantity: "time",
 
         disambiguators: {
@@ -973,9 +835,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "common_year",
-
+    "common_year": {
         quantity: "time",
 
         disambiguators: {
@@ -984,9 +844,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "leap_month",
-
+    "leap_month": {
         quantity: "time",
 
         disambiguators: {
@@ -995,9 +853,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "leap_year",
-
+    "leap_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1006,9 +862,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "julian_month",
-
+    "julian_month": {
         quantity: "time",
 
         disambiguators: {
@@ -1017,9 +871,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "julian_year",
-
+    "julian_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1028,9 +880,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "julian_decade",
-
+    "julian_decade": {
         quantity: "time",
 
         disambiguators: {
@@ -1039,9 +889,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...DECADE_FORMS,
     },
-    {
-        id: "julian_century",
-
+    "julian_century": {
         quantity: "time",
 
         disambiguators: {
@@ -1050,9 +898,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...CENTURY_FORMS,
     },
-    {
-        id: "julian_millennium",
-
+    "julian_millennium": {
         quantity: "time",
 
         disambiguators: {
@@ -1061,9 +907,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MILLENNIUM_FORMS,
     },
-    {
-        id: "gregorian_month",
-
+    "gregorian_month": {
         quantity: "time",
 
         disambiguators: {
@@ -1072,9 +916,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "gregorian_year",
-
+    "gregorian_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1083,9 +925,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "gregorian_decade",
-
+    "gregorian_decade": {
         quantity: "time",
 
         disambiguators: {
@@ -1094,9 +934,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...DECADE_FORMS,
     },
-    {
-        id: "gregorian_century",
-
+    "gregorian_century": {
         quantity: "time",
 
         disambiguators: {
@@ -1105,9 +943,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...CENTURY_FORMS,
     },
-    {
-        id: "gregorian_millennium",
-
+    "gregorian_millennium": {
         quantity: "time",
 
         disambiguators: {
@@ -1116,9 +952,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MILLENNIUM_FORMS,
     },
-    {
-        id: "mean_tropical_month",
-
+    "mean_tropical_month": {
         quantity: "time",
 
         disambiguators: {
@@ -1127,9 +961,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "mean_tropical_year",
-
+    "mean_tropical_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1138,9 +970,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "mean_tropical_decade",
-
+    "mean_tropical_decade": {
         quantity: "time",
 
         disambiguators: {
@@ -1149,9 +979,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...DECADE_FORMS,
     },
-    {
-        id: "mean_tropical_century",
-
+    "mean_tropical_century": {
         quantity: "time",
 
         disambiguators: {
@@ -1160,9 +988,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...CENTURY_FORMS,
     },
-    {
-        id: "mean_tropical_millennium",
-
+    "mean_tropical_millennium": {
         quantity: "time",
 
         disambiguators: {
@@ -1171,9 +997,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MILLENNIUM_FORMS,
     },
-    {
-        id: "sidereal_month",
-
+    "sidereal_month": {
         quantity: "time",
 
         disambiguators: {
@@ -1182,9 +1006,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "sidereal_year",
-
+    "sidereal_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1193,9 +1015,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "sidereal_decade",
-
+    "sidereal_decade": {
         quantity: "time",
 
         disambiguators: {
@@ -1204,9 +1024,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...DECADE_FORMS,
     },
-    {
-        id: "sidereal_century",
-
+    "sidereal_century": {
         quantity: "time",
 
         disambiguators: {
@@ -1215,9 +1033,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...CENTURY_FORMS,
     },
-    {
-        id: "sidereal_millennium",
-
+    "sidereal_millennium": {
         quantity: "time",
 
         disambiguators: {
@@ -1226,9 +1042,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MILLENNIUM_FORMS,
     },
-    {
-        id: "synodic_month",
-
+    "synodic_month": {
         quantity: "time",
 
         disambiguators: {
@@ -1237,9 +1051,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "synodic_year",
-
+    "synodic_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1248,9 +1060,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "synodic_decade",
-
+    "synodic_decade": {
         quantity: "time",
 
         disambiguators: {
@@ -1259,9 +1069,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...DECADE_FORMS,
     },
-    {
-        id: "synodic_century",
-
+    "synodic_century": {
         quantity: "time",
 
         disambiguators: {
@@ -1270,9 +1078,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...CENTURY_FORMS,
     },
-    {
-        id: "synodic_millennium",
-
+    "synodic_millennium": {
         quantity: "time",
 
         disambiguators: {
@@ -1281,9 +1087,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MILLENNIUM_FORMS,
     },
-    {
-        id: "short_month",
-
+    "short_month": {
         quantity: "time",
 
         disambiguators: {
@@ -1295,9 +1099,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "short_month_year",
-
+    "short_month_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1309,9 +1111,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "hollow_month",
-
+    "hollow_month": {
         quantity: "time",
 
         disambiguators: {
@@ -1323,9 +1123,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "hollow_month_year",
-
+    "hollow_month_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1337,9 +1135,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "full_month",
-
+    "full_month": {
         quantity: "time",
 
         disambiguators: {
@@ -1351,9 +1147,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "full_month_year",
-
+    "full_month_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1365,9 +1159,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "long_month",
-
+    "long_month": {
         quantity: "time",
 
         disambiguators: {
@@ -1379,9 +1171,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...MONTH_FORMS,
     },
-    {
-        id: "long_month_year",
-
+    "long_month_year": {
         quantity: "time",
 
         disambiguators: {
@@ -1393,18 +1183,14 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         ...YEAR_FORMS,
     },
-    {
-        id: "planck_time",
-
+    "planck_time": {
         quantity: "time",
 
         forms: [[modifier("planck"), noun("time")]]
     },
 
     // frequency
-    {
-        id: "hertz",
-
+    "hertz": {
         quantity: "frequency",
 
         forms: [[noun("hertz", { plurals: [] })]],
@@ -1412,17 +1198,13 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // speed or velocity
-    {
-        id: "knot",
-
+    "knot": {
         quantity: "speed",
 
         forms: simpleForms(["knot"]),
         shortForms: simpleForms(["kn"]),
     },
-    {
-        id: "speed_of_light",
-
+    "speed_of_light": {
         quantity: "speed",
 
         forms: [[noun("speed"), modifier("of light")]],
@@ -1430,16 +1212,12 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // acceleration
-    {
-        id: "standard_gravity",
-
+    "standard_gravity": {
         quantity: "acceleration",
 
         forms: [[modifier("standard"), noun("gravity", { plurals: ["gravities"] })]]
     },
-    {
-        id: "gal_acceleration",
-
+    "gal_acceleration": {
         quantity: "acceleration",
 
         forms: simpleForms(["galileo"]),
@@ -1447,25 +1225,19 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // weight/force
-    {
-        id: "newton",
-
+    "newton": {
         quantity: "force",
 
         forms: simpleForms(["newton"]),
         shortForms: simpleForms(["N"]),
     },
-    {
-        id: "dyne",
-
+    "dyne": {
         quantity: "force",
 
         forms: simpleForms(["dyne"]),
         shortForms: simpleForms(["dyn"]),
     },
-    {
-        id: "poundal",
-
+    "poundal": {
         quantity: "force",
 
         forms: simpleForms(["poundal"]),
@@ -1473,41 +1245,31 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // pressure
-    {
-        id: "atmosphere",
-
+    "atmosphere": {
         quantity: "pressure",
 
         forms: simpleForms(["atmosphere"]),
         shortForms: simpleForms(["atm"]),
     },
-    {
-        id: "bar",
-
+    "bar": {
         quantity: "pressure",
 
         forms: simpleForms(["bar"]),
         shortForms: simpleForms(["bar"]),
     },
-    {
-        id: "barye",
-
+    "barye": {
         quantity: "pressure",
 
         forms: simpleForms(["barye"]),
         shortForms: simpleForms(["barye"]),
     },
-    {
-        id: "pascal",
-
+    "pascal": {
         quantity: "pressure",
 
         forms: simpleForms(["pascal"]),
         shortForms: simpleForms(["Pa"]),
     },
-    {
-        id: "torr",
-
+    "torr": {
         quantity: "pressure",
 
         forms: [[noun("torr", { plurals: [] })]],
@@ -1515,49 +1277,37 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // energy
-    {
-        id: "british_thermal_unit",
-
+    "british_thermal_unit": {
         quantity: "energy",
 
         forms: [[modifier("british"), modifier("thermal"), noun("unit")]],
         shortForms: simpleForms(["BTU", "BTUs"]),
     },
-    {
-        id: "calorie",
-
+    "calorie": {
         quantity: "energy",
 
         forms: simpleForms(["calorie"]),
         shortForms: simpleForms(["cal", "cals"]),
     },
-    {
-        id: "joule",
-
+    "joule": {
         quantity: "energy",
 
         forms: simpleForms(["joule"]),
         shortForms: simpleForms(["J"]),
     },
-    {
-        id: "erg",
-
+    "erg": {
         quantity: "energy",
 
         forms: simpleForms(["erg"]),
         shortForms: simpleForms(["erg"]),
     },
-    {
-        id: "electronvolt",
-
+    "electronvolt": {
         quantity: "energy",
 
         forms: [[modifier("electron"), noun("volt")]],
         shortForms: simpleForms(["eV"]),
     },
-    {
-        id: "therm",
-
+    "therm": {
         quantity: "energy",
 
         forms: simpleForms(["therm"]),
@@ -1565,17 +1315,13 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // power
-    {
-        id: "watt",
-
+    "watt": {
         quantity: "power",
 
         forms: simpleForms(["watt"]),
         shortForms: simpleForms(["W"]),
     },
-    {
-        id: "horsepower",
-
+    "horsepower": {
         quantity: "power",
 
         forms: [[noun("horse"), modifier("power")]],
@@ -1583,81 +1329,61 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // electricity/magnetism
-    {
-        id: "coulomb",
-
+    "coulomb": {
         quantity: "electric_charge",
 
         forms: simpleForms(["coulomb"]),
         shortForms: simpleForms(["C"]),
     },
-    {
-        id: "ampere",
-
+    "ampere": {
         quantity: "electric_current",
 
         forms: simpleForms(["ampere", "amp"]),
         shortForms: simpleForms(["A"]),
     },
-    {
-        id: "volt",
-
+    "volt": {
         quantity: "electric_potential",
 
         forms: simpleForms(["volt"]),
         shortForms: simpleForms(["V"]),
     },
-    {
-        id: "ohm",
-
+    "ohm": {
         quantity: "electric_resistance",
 
         forms: simpleForms(["ohm"]),
         shortForms: simpleForms(["Ω"]),
     },
-    {
-        id: "siemens",
-
+    "siemens": {
         quantity: "electric_conductance",
 
         forms: [[noun("siemens", { plurals: ["siemenses"] })]],
         shortForms: simpleForms(["S"]),
     },
-    {
-        id: "farad",
-
+    "farad": {
         quantity: "capacitance",
 
         forms: simpleForms(["farad"]),
         shortForms: simpleForms(["F"]),
     },
-    {
-        id: "weber",
-
+    "weber": {
         quantity: "magnetic_flux",
 
         forms: simpleForms(["weber"]),
         shortForms: simpleForms(["Wb"]),
     },
-    {
-        id: "gauss",
-
+    "gauss": {
         quantity: "magnetic_flux_density",
 
         forms: [[noun("gauss", { plurals: ["gausses"] })]],
         shortForms: simpleForms(["G"]),
     },
-    {
-        id: "tesla",
-
+    "tesla": {
         quantity: "magnetic_flux_density",
 
         forms: simpleForms(["tesla"]),
         shortForms: simpleForms(["T"]),
     },
-    {
-        id: "henry",
-
+    "henry": {
         quantity: "inductance",
 
         forms: [[noun("henry", { plurals: ["henries"] })]],
@@ -1665,33 +1391,25 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // temperature
-    {
-        id: "degree_celsius",
-
+    "degree_celsius": {
         quantity: "temperature",
 
         forms: [[noun("degree"), modifier("celsius")]],
         shortForms: simpleForms(["°C"]),
     },
-    {
-        id: "degree_fahrenheit",
-
+    "degree_fahrenheit": {
         quantity: "temperature",
 
         forms: [[noun("degree"), modifier("fahrenheit")]],
         shortForms: simpleForms(["°F"]),
     },
-    {
-        id: "degree_rankine",
-
+    "degree_rankine": {
         quantity: "temperature",
 
         forms: [[noun("degree"), modifier("rankine")]],
         shortForms: simpleForms(["°R"]),
     },
-    {
-        id: "kelvin",
-
+    "kelvin": {
         quantity: "temperature",
 
         forms: [[noun("kelvin")], [noun("degree"), modifier("kelvin")]],
@@ -1699,32 +1417,24 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // information
-    {
-        id: "natural_unit_of_information",
-
+    "natural_unit_of_information": {
         quantity: "information",
 
         forms: [[modifier("natural"), noun("unit"), modifier("of information")], [noun("nepit")], [noun("nit")]],
         shortForms: simpleForms(["nat"]),
     },
-    {
-        id: "bit",
-
+    "bit": {
         quantity: "information",
 
         forms: simpleForms(["bit", "shannon"]),
         shortForms: simpleForms(["b", "Sh"]),
     },
-    {
-        id: "nibble",
-
+    "nibble": {
         quantity: "information",
 
         forms: simpleForms(["nibble"]),
     },
-    {
-        id: "byte",
-
+    "byte": {
         quantity: "information",
 
         forms: simpleForms(["byte"]),
@@ -1732,17 +1442,13 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // information rate
-    {
-        id: "bit_per_second",
-
+    "bit_per_second": {
         quantity: "information_rate",
 
         forms: [[noun("bit"), modifier("per"), modifier("second")]],
         shortForms: simpleForms(["bps"]),
     },
-    {
-        id: "byte_per_second",
-
+    "byte_per_second": {
         quantity: "information_rate",
 
         forms: [[noun("byte"), modifier("per"), modifier("second")]],
@@ -1750,9 +1456,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // luminous intensity
-    {
-        id: "candela",
-
+    "candela": {
         quantity: "luminous_intensity",
 
         forms: [[noun("candela")], [noun("candle"), modifier("power")]],
@@ -1760,9 +1464,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // luminous flux
-    {
-        id: "lumen",
-
+    "lumen": {
         quantity: "luminous_flux",
 
         forms: simpleForms(["lumen"]),
@@ -1770,17 +1472,13 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // illuminance
-    {
-        id: "lux",
-
+    "lux": {
         quantity: "illuminance",
 
         forms: [[noun("lux", { plurals: ["luxes"] })]],
         shortForms: simpleForms(["lx"]),
     },
-    {
-        id: "footcandle",
-
+    "footcandle": {
         quantity: "illuminance",
 
         forms: [[modifier("foot"), noun("candle")]],
@@ -1788,33 +1486,25 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // radiation and doses
-    {
-        id: "becquerel",
-
+    "becquerel": {
         quantity: "radiation_source_activity",
 
         forms: simpleForms(["becquerel"]),
         shortForms: simpleForms(["Bq"]),
     },
-    {
-        id: "curie",
-
+    "curie": {
         quantity: "radiation_source_activity",
 
         forms: simpleForms(["curie"]),
         shortForms: simpleForms(["Ci"]),
     },
-    {
-        id: "rutherford",
-
+    "rutherford": {
         quantity: "radiation_source_activity",
 
         forms: simpleForms(["rutherford"]),
         shortForms: simpleForms(["Rd"]),
     },
-    {
-        id: "roentgen",
-
+    "roentgen": {
         quantity: "radiation_exposure",
 
         forms: [[noun("roentgen", {
@@ -1825,17 +1515,13 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         })]],
         shortForms: simpleForms(["R"]),
     },
-    {
-        id: "gray",
-
+    "gray": {
         quantity: "radiation_absorbed_dose",
 
         forms: simpleForms(["gray"]),
         shortForms: simpleForms(["Gy"]),
     },
-    {
-        id: "roentgen_equivalent_man",
-
+    "roentgen_equivalent_man": {
         quantity: "radiation_equivalent_dose",
 
         forms: [[noun("roentgen", {
@@ -1846,9 +1532,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
         }), modifier("equivalent"), modifier("man")]],
         shortForms: simpleForms(["rem"]),
     },
-    {
-        id: "sievert",
-
+    "sievert": {
         quantity: "radiation_equivalent_dose",
 
         forms: simpleForms(["sievert"]),
@@ -1856,9 +1540,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // amount of substance
-    {
-        id: "mole",
-
+    "mole": {
         quantity: "amount_of_substance",
 
         forms: simpleForms(["mole"]),
@@ -1866,51 +1548,58 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
     },
 
     // proportion
-    {
-        id: "percent",
-
+    "percent": {
         quantity: "proportion",
 
         forms: simpleForms(["percent"]),
         shortForms: simpleForms(["pct", "%"]),
     },
-    {
-        id: "part_per_thousand",
-
+    "part_per_thousand": {
         quantity: "proportion",
 
         forms: [[noun("part"), modifier("per"), modifier("thousand")]],
     },
-    {
-        id: "part_per_million",
-
+    "part_per_million": {
         quantity: "proportion",
 
         forms: [[noun("part"), modifier("per"), modifier("million")]],
         shortForms: simpleForms(["ppm"]),
     },
-    {
-        id: "part_per_billion",
-
+    "part_per_billion": {
         quantity: "proportion",
 
         forms: [[noun("part"), modifier("per"), modifier("billion")]],
         shortForms: simpleForms(["ppb"]),
     },
-    {
-        id: "part_per_trillion",
-
+    "part_per_trillion": {
         quantity: "proportion",
 
         forms: [[noun("part"), modifier("per"), modifier("trillion")]],
         shortForms: simpleForms(["ppt"]),
     },
-    {
-        id: "part_per_quadrillion",
-
+    "part_per_quadrillion": {
         quantity: "proportion",
 
         forms: [[noun("part"), modifier("per"), modifier("quadrillion")]],
         shortForms: simpleForms(["ppq"]),
     },
-] as const satisfies ReadonlyArray<UnitProps>;
+} as const satisfies Readonly<Record<string, UnitProps>>;
+
+export function dispType(quantity: Quantity): "mul" | "div" | null {
+    switch (quantity) {
+        case "length": // maps to pressure; mass/area
+        case "area": // maps to force/length; mass/length
+        case "volume": // maps to force; mass
+            {
+                return "mul";
+            }
+        case "mass": // maps to volume/standard_gravity; volume
+        case "force": // maps to volume; volume*standard_gravity
+        case "pressure": // maps to length; length*standard_gravity
+            {
+                return "div";
+            }
+        default:
+            return null;
+    }
+}

@@ -6,26 +6,35 @@ export interface UnitlessUnit {
 
 export interface BaseUnit {
     readonly type: "base";
-    readonly unit: string;
+    readonly unitId: string;
+    readonly pow: bigint;
     readonly scale: Num;
 }
 
-export interface ProdUnit {
-    readonly type: "prod";
-    readonly lhs: Unit;
-    readonly rhs: Unit;
-}
+export type Unit = BaseUnit[];
 
-export interface QuotUnit {
-    readonly type: "quot";
-    readonly lhs: Unit;
-    readonly rhs: Unit;
-}
+// export interface ScaleUnit {
+//     readonly type: "scale";
+//     readonly arg: Unit;
+//     readonly scale: Num;
+// }
 
-export interface PowUnit {
-    readonly type: "pow";
-    readonly arg: Unit;
-    readonly pow: bigint;
-}
+// export interface PowUnit {
+//     readonly type: "pow";
+//     readonly arg: Unit;
+//     readonly pow: bigint;
+// }
 
-export type Unit = UnitlessUnit | BaseUnit | ProdUnit | QuotUnit | PowUnit;
+// export interface ProdUnit {
+//     readonly type: "prod";
+//     readonly lhs: Unit;
+//     readonly rhs: Unit;
+// }
+
+// export interface QuotUnit {
+//     readonly type: "quot";
+//     readonly lhs: Unit;
+//     readonly rhs: Unit;
+// }
+
+// export type Unit = UnitlessUnit | BaseUnit | ScaleUnit | PowUnit | ProdUnit | QuotUnit;

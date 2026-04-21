@@ -1,5 +1,6 @@
 import { AST, BinOpAST } from "./ast";
 import { simplify } from "./numbers";
+import { parseUnit } from "./units/unit_parsing";
 
 export function parseStd(input: string): AST {
     const toks = (input.match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*|[a-zA-Z]+(?:_+[a-zA-Z]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
@@ -160,24 +161,20 @@ export function parseStd(input: string): AST {
     function parseUnits(toks: Grouping["toks"]): AST {
         console.log("units", toks);
 
-        function parseUnitAbbr(abbr: string) {
-        }
-
         if (toks.length != 0) {
             const lastTok = toks[toks.length - 1];
 
             if (typeof lastTok == "string" && lastTok[0].match(/[a-zA-Z]/)) {
                 return {
                     type: "unitOp",
-                    // unit: parseUnitAbbr(lastTok),
-                    unit: { type: "unitless" },
+                    unit: parseUnit(lastTok)[0] ?? [],
                     arg: parseSingleThing(toks.slice(0, -1))
                 };
             } else if (typeof lastTok == "object" && lastTok.type == "[]") {
                 return {
                     type: "unitOp",
                     // unit: parseFullUnit(lastTok.toks),
-                    unit: { type: "unitless" },
+                    unit: [],
                     arg: parseUnits(toks.slice(0, -1))
                 };
             }

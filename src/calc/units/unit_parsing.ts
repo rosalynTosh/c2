@@ -1,4 +1,7 @@
+import { Num, pow } from "../numbers";
 import { BINARY_PREFIXES_LONG, BINARY_PREFIXES_SHORT, SI_PREFIXES_LONG, SI_PREFIXES_SHORT } from "./scale_mods";
+import { BaseUnit, Unit } from "./unit";
+import { dispType, UNIT_PROPS } from "./unit_props";
 import { ref } from "./unit_reference";
 
 const scaleRegExps = [
@@ -6,14 +9,16 @@ const scaleRegExps = [
     ...[...Object.keys(SI_PREFIXES_LONG), ...Object.keys(BINARY_PREFIXES_LONG)].map((scale) => new RegExp(scale, "gi")),
 ];
 
-export function parseUnit(unit: string) {
+export function parseUnit(unit: string): Unit[] {
     unit = unit.normalize("NFC");
 
     type Mod = { modStr: string, index: number };
-    type ParserStage = (parts: string[], mods: Map<string, Mod | null>) => void;
+    type ParserStage = (parts: string[], mods: Map<string, Mod | null>) => Unit[];
 
     function buildParserStage(modId: string, startIndexModId: string | null, modRegExps: RegExp[], matchValidator: (lo: string, hi: string, modStr: string) => boolean, nStageFn: ParserStage): ParserStage {
-        return function (parts: string[], mods: Map<string, Mod | null>): void {
+        return function (parts: string[], mods: Map<string, Mod | null>): Unit[] {
+            let units: Unit[] = nStageFn(parts, new Map([...mods.entries(), [modId, null]]));
+
             for (let i = startIndexModId === null ? 0 : mods.get(startIndexModId)?.index ?? 0; i < parts.length; i++) {
                 const part = parts[i];
 
@@ -31,19 +36,22 @@ export function parseUnit(unit: string) {
                     const loCt = lo == "" ? 0 : 1;
                     const hiCt = hi == "" ? 0 : 1;
 
-                    nStageFn([
-                        ...parts.slice(0, i),
-                        ...(lo == "" ? [] : [lo]),
-                        ...(hi == "" ? [] : [hi]),
-                        ...parts.slice(i + 1)
-                    ], new Map([
-                        ...[...mods.entries()].map(([pModId, mod]): [string, Mod | null] => [pModId, mod === null ? null : { modStr: mod.modStr, index: mod.index <= i ? mod.index : mod.index + loCt + hiCt - 1 }]),
-                        [modId, { modStr, index: i + loCt }],
-                    ]));
+                    units = units.concat(nStageFn(
+                        [
+                            ...parts.slice(0, i),
+                            ...(lo == "" ? [] : [lo]),
+                            ...(hi == "" ? [] : [hi]),
+                            ...parts.slice(i + 1)
+                        ],
+                        new Map([
+                            ...[...mods.entries()].map(([pModId, mod]): [string, Mod | null] => [pModId, mod === null ? null : { modStr: mod.modStr, index: mod.index <= i ? mod.index : mod.index + loCt + hiCt - 1 }]),
+                            [modId, { modStr, index: i + loCt }],
+                        ])
+                    ));
                 }
             }
 
-            nStageFn(parts, new Map([...mods.entries(), [modId, null]]));
+            return units;
         };
     }
 
@@ -53,12 +61,65 @@ export function parseUnit(unit: string) {
     let parseWeightForce: ParserStage;
     let parseDisp: ParserStage;
 
-    function parseBaseUnit(parts: string[], mods: Map<string, Mod | null>) {
+    function parseBaseUnit(parts: string[], mods: Map<string, Mod | null>): Unit[] {
+        const scaleMod = mods.get("scale")!;
+        const lightMod = mods.get("light")!;
+        const weightForceMod = mods.get("weightForce")!;
+        const dispMod = mods.get("disp")!;
+
+        if (scaleMod !== null && scaleMod.index >= parts.length) return [];
+        if (lightMod !== null && lightMod.index >= parts.length) return [];
+        if (weightForceMod !== null && weightForceMod.index <= 0) return [];
+        if (dispMod !== null && dispMod.index <= 0) return [];
+
         const words = parts.flatMap(p => p.split("_")).filter(w => w != "").join("_");
+        const found = ref.get(words);
 
-        if (ref.get(words) === undefined) return;
+        if (found === undefined) return [];
 
-        console.log(words, ref.get(words), mods);
+        const ONE = { type: "int", int: 1n } satisfies Num;
+
+        const includeLowercases = !found.some(({ lowercases }) => lowercases == 0);
+        const filteredFound = includeLowercases ? found : found.filter(({ lowercases }) => lowercases == 0);
+
+        const scale = scaleMod === null ? ONE : (
+            SI_PREFIXES_LONG[scaleMod.modStr] ??
+            SI_PREFIXES_SHORT[scaleMod.modStr] ??
+            BINARY_PREFIXES_LONG[scaleMod.modStr] ??
+            BINARY_PREFIXES_SHORT[scaleMod.modStr]
+        );
+
+        const light = lightMod !== null;
+
+        const sqOrCbMod = mods.get("sqOrCb")!;
+        const sqOrCb = sqOrCbMod === null ? null : sqOrCbMod.modStr.match(/sq/gi) === null ? "cb" : "sq";
+        const sqOrCbPow = sqOrCb === null ? 1n : sqOrCb == "sq" ? 2n : 3n;
+
+        const weightForce = weightForceMod !== null;
+
+        const dispFluid = dispMod === null ? null : dispMod.modStr.match(/Hg|mercurcy/gi) === null ? "H2O" : "Hg";
+
+        return filteredFound.map(({ unitId }) => {
+            const baseUnit: BaseUnit = {
+                type: "base",
+                unitId,
+                pow: sqOrCbPow,
+                scale: pow(scale, { type: "int", int: sqOrCbPow })
+            };
+
+            const disp = dispFluid === null ? null : dispType(UNIT_PROPS[unitId].quantity);
+
+            if (dispFluid !== null && disp === null) return null;
+
+            const gPow = (weightForce ? 1n : 0n) * sqOrCbPow + (disp === null || dispMod!.modStr.match(/disp/gi) !== null ? 0n : disp == "mul" ? 1n : -1n);
+
+            return [
+                baseUnit,
+                ...(light ? [{ type: "base", unitId: "speed_of_light", pow: sqOrCbPow, scale: ONE } satisfies BaseUnit] : []),
+                ...(gPow != 0n ? [{ type: "base", unitId: "standard_gravity", pow: gPow, scale: ONE } satisfies BaseUnit] : []),
+                ...(disp !== null ? [{ type: "base", unitId: "density_" + dispFluid, pow: disp == "mul" ? 1n : -1n, scale: ONE } satisfies BaseUnit] : []),
+            ];
+        }).filter((unit) => unit !== null);
     }
 
     parseDisp = buildParserStage("disp", "light", [
@@ -86,7 +147,7 @@ export function parseUnit(unit: string) {
     parseLight = buildParserStage("light", null, [/l/g, /light/gi], (_lo, hi, modStr) => modStr == "l" ? hi.match(/^[^_]/) !== null : hi != "", parseSqOrCb);
     parseScale = buildParserStage("scale", null, scaleRegExps, (_lo, hi, modStr) => (modStr in SI_PREFIXES_LONG || modStr in BINARY_PREFIXES_LONG) ? hi != "" : hi.match(/^[^_]/) !== null, parseLight);
 
-    parseScale([unit], new Map());
+    return parseScale([unit], new Map());
 }
 
 // Long unit normalization:

@@ -42,7 +42,7 @@ export class CalcModule {
 
                 // this.parseFp(input);
 
-                parseUnit(input);
+                console.log(parseUnit(input));
 
                 this.fpInput.value = "";
                 this.fpInput.parentElement!.dataset.copy = this.fpInput.value;

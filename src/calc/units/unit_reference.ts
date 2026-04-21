@@ -188,14 +188,16 @@ function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
 export function buildUnitReference(): Map<string, { unitId: string, lowercases: number }[]> {
     const ref: Map<string, { unitId: string, lowercases: number }[]> = new Map();
 
-    for (const unit of UNIT_PROPS) {
-        for (const [form, { lowercases }] of buildForms(unit)) {
+    for (const unitId in UNIT_PROPS) {
+        const unitProps = UNIT_PROPS[unitId];
+
+        for (const [form, { lowercases }] of buildForms(unitProps)) {
             const found = ref.get(form);
 
             if (found === undefined) {
-                ref.set(form, [{ unitId: unit.id, lowercases }]);
+                ref.set(form, [{ unitId, lowercases }]);
             } else {
-                found.push({ unitId: unit.id, lowercases });
+                found.push({ unitId, lowercases });
             }
         }
     }
