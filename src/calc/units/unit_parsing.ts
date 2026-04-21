@@ -9,11 +9,12 @@ const scaleRegExps = [
 export function parseUnit(unit: string) {
     unit = unit.normalize("NFC");
 
-    type ParserStage = (parts: string[], mods: Record<string, { modStr: string, index: number } | null>) => void;
+    type Mod = { modStr: string, index: number };
+    type ParserStage = (parts: string[], mods: Map<string, Mod | null>) => void;
 
     function buildParserStage(modId: string, startIndexModId: string | null, modRegExps: RegExp[], matchValidator: (lo: string, hi: string, modStr: string) => boolean, nStageFn: ParserStage): ParserStage {
-        return function (parts: string[], mods: Record<string, { modStr: string, index: number } | null>): void {
-            for (let i = startIndexModId === null ? 0 : mods[startIndexModId]?.index ?? 0; i < parts.length; i++) {
+        return function (parts: string[], mods: Map<string, Mod | null>): void {
+            for (let i = startIndexModId === null ? 0 : mods.get(startIndexModId)?.index ?? 0; i < parts.length; i++) {
                 const part = parts[i];
 
                 for (const match of modRegExps.flatMap((regExp) => [...part.matchAll(regExp)])) {
@@ -27,16 +28,22 @@ export function parseUnit(unit: string) {
 
                     if (!matchValidator(superLo, superHi, modStr)) continue;
 
+                    const loCt = lo == "" ? 0 : 1;
+                    const hiCt = hi == "" ? 0 : 1;
+
                     nStageFn([
                         ...parts.slice(0, i),
                         ...(lo == "" ? [] : [lo]),
                         ...(hi == "" ? [] : [hi]),
                         ...parts.slice(i + 1)
-                    ], { ...mods, [modId]: { modStr, index: i + (lo == "" ? 0 : 1) } });
+                    ], new Map([
+                        ...[...mods.entries()].map(([pModId, mod]): [string, Mod | null] => [pModId, mod === null ? null : { modStr: mod.modStr, index: mod.index <= i ? mod.index : mod.index + loCt + hiCt - 1 }]),
+                        [modId, { modStr, index: i + loCt }],
+                    ]));
                 }
             }
 
-            nStageFn(parts, { ...mods, [modId]: null });
+            nStageFn(parts, new Map([...mods.entries(), [modId, null]]));
         };
     }
 
@@ -45,30 +52,39 @@ export function parseUnit(unit: string) {
     let parseSqOrCb: ParserStage;
     let parseDisp: ParserStage;
 
-    function parseBaseUnit(parts: string[], mods: Record<string, { modStr: string, index: number } | null>) {
+    function parseBaseUnit(parts: string[], mods: Map<string, Mod | null>) {
         const words = parts.flatMap(p => p.split("_")).filter(w => w != "").join("_");
 
-        console.log(words, ref.get(words), mods);
-
         if (ref.get(words) === undefined) return;
+
+        console.log(words, ref.get(words), mods);
     }
 
     parseDisp = buildParserStage("disp", "light", [
         /disp/gi,
+        /of_?disp/gi,
         /displacement/gi,
+        /of_?displacement/gi,
         /disp(?:lacement)?(?:_?of)?_?(?:H2[O0]|Hg|water|mercury)/gi,
+        /of_?disp(?:lacement)?(?:_?of)?_?(?:H2[O0]|Hg|water|mercury)/gi,
         /H2[O0]/gi,
+        /of_?H2[O0]/gi,
         /Hg/gi,
+        /of_?Hg/gi,
         /water/gi,
+        /of_?water/gi,
         /mercury/gi,
+        /of_?mercury/gi,
         /(?:H2[O0]|Hg|water|mercury)_?disp/gi,
+        /of_?(?:H2[O0]|Hg|water|mercury)_?disp/gi,
         /(?:H2[O0]|Hg|water|mercury)_?displacement/gi,
+        /of_?(?:H2[O0]|Hg|water|mercury)_?displacement/gi,
     ], (lo, _hi) => lo != "", parseBaseUnit);
     parseSqOrCb = buildParserStage("sqOrCb", null, [/sq/gi, /square/gi, /c[bu]/gi, /cubic/gi], (lo, hi) => lo != "" || hi != "", parseDisp);
-    parseLight = buildParserStage("light", null, [/l/g, /light/gi], (_lo, hi) => hi.match(/^[^_]/) !== null, parseSqOrCb);
+    parseLight = buildParserStage("light", null, [/l/g, /light/gi], (_lo, hi, modStr) => modStr == "l" ? hi.match(/^[^_]/) !== null : hi != "", parseSqOrCb);
     parseScale = buildParserStage("scale", null, scaleRegExps, (_lo, hi, modStr) => (modStr in SI_PREFIXES_LONG || modStr in BINARY_PREFIXES_LONG) ? hi != "" : hi.match(/^[^_]/) !== null, parseLight);
 
-    parseScale([unit], {});
+    parseScale([unit], new Map());
 }
 
 // Long unit normalization:

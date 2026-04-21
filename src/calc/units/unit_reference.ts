@@ -126,7 +126,7 @@ function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
     }
 
     for (const disambiguatorId in unitProps.disambiguators) {
-        const { systemForms, shortSystemForms } = unitProps.disambiguators[disambiguatorId];
+        const { systemForms, shortSystemForms } = unitProps.disambiguators[disambiguatorId as keyof typeof unitProps.disambiguators]!;
 
         let modifiedCombSplitForms: typeof combSplitForms = [];
 
