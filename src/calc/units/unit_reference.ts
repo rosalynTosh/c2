@@ -172,6 +172,16 @@ function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
         }
     }
 
+    for (const form of unitProps.rawShortForms ?? []) {
+        const curr = forms.get(form);
+
+        if (curr === undefined) {
+            forms.set(form, { lowercases: 0 });
+        } else {
+            curr.lowercases = 0;
+        }
+    }
+
     return forms;
 }
 

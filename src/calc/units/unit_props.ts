@@ -73,7 +73,7 @@ export interface UnitProps {
 
     readonly forms: ReadonlyArray<UnitFormProps>;
     readonly shortForms?: ReadonlyArray<UnitFormProps>;
-    readonly rawShortForms?: ReadonlyArray<UnitFormProps>; // no disambiguators
+    readonly rawShortForms?: ReadonlyArray<string>; // no disambiguators
 }
 
 function noun(word: string, options?: Partial<UnitWordPropsNoun>): UnitWordProps {
@@ -365,7 +365,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         forms: [[noun("mile")]],
         shortForms: simpleForms(["mi"]),
-        rawShortForms: simpleForms(["NM"]),
+        rawShortForms: ["NM"],
     },
     {
         id: "nautical_league",
@@ -378,7 +378,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         forms: [[noun("league")]],
         shortForms: simpleForms(["lea"]),
-        rawShortForms: simpleForms(["NL", "nl"]),
+        rawShortForms: ["NL"],
     },
     {
         id: "link",
@@ -847,7 +847,7 @@ export const UNIT_PROPS: ReadonlyArray<UnitProps> = [
 
         forms: simpleForms(["ton"]),
         shortForms: simpleForms(["tn"]),
-        rawShortForms: simpleForms(["LT"]),
+        rawShortForms: ["LT"],
     },
     {
         id: "grain",
