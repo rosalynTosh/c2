@@ -1,10 +1,10 @@
 import { AST, BinOpAST, NumAST } from "./ast";
 import { CONSTS } from "./consts";
-import { simplify } from "./numbers";
+import { add, Num, simplify } from "./numbers";
 import { parseUnit } from "./units/unit_parsing";
 
 export function parseStd(input: string): AST {
-    const toks = (input.normalize("NFC").match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*(?:(?:\s*|_)[a-zA-Z\xb0åÄµöÖΩ]+(?:_+[a-zA-Z\xb0åÄµöÖΩ]+)*)?|[a-zA-Z]+(?:_+[a-zA-Z]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
+    const toks = (input.normalize("NFC").match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*(?:(?:\s*|_)[a-zA-Z\xb0åÄµöÖΩ]+(?:_+[a-zA-Z\xb0åÄµöÖΩ]+)*)?|[a-zA-Z][a-zA-Z0-9]*(?:_+[a-zA-Z0-9]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
 
     type Grouping = {
         toks: (string | Grouping)[],
@@ -219,6 +219,33 @@ export function parseStd(input: string): AST {
         } else if (toks.length == 1 && typeof toks[0] == "object" && toks[0].type == "()") {
             return parseBinOps1(toks[0].toks);
         } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[A-Z]/)) {
+            if (toks[0].match(/^LN_[1-9]\d*$/)) {
+                function factor(num: bigint): bigint[] | null {
+                    if (num == 1n) return [];
+
+                    for (const fac of [2n, 3n, 5n, 7n, 11n, 13n, 17n]) {
+                        if (num % fac == 0n) {
+                            const cont = factor(num / fac);
+
+                            if (cont === null) return null;
+
+                            return [fac, ...cont];
+                        }
+                    }
+
+                    return null;
+                }
+
+                const facs = factor(BigInt(toks[0].slice(3)));
+
+                if (facs !== null) {
+                    return {
+                        type: "num",
+                        num: facs.reduce((n, f): Num => add(n, CONSTS["LN_" + f]!), { type: "int", int: 0n })
+                    };
+                }
+            }
+
             const num = CONSTS[toks[0]];
 
             if (num === undefined) {
