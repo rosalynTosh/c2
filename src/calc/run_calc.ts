@@ -1,7 +1,14 @@
 import { AST } from "./ast";
 import { add, div, mod, mul, neg, Num, pow, sub } from "./numbers";
+import { convert, divUnits, mulUnits, powUnit } from "./units/ops";
+import { Unit } from "./units/unit";
 
-export function runCalc(ast: AST, inputs: Num[]): Num {
+export interface Value {
+    num: Num;
+    unit: Unit | null;
+}
+
+export function runCalc(ast: AST, inputs: Value[]): Value {
     switch (ast.type) {
         case "binOp": {
             const lhs = runCalc(ast.lhs, inputs);
@@ -9,22 +16,50 @@ export function runCalc(ast: AST, inputs: Num[]): Num {
 
             switch (ast.op) {
                 case "+": {
-                    return add(lhs, rhs);
+                    return {
+                        num: add(lhs.num, convert(rhs.num, rhs.unit, lhs.unit)),
+                        unit: lhs.unit ?? rhs.unit
+                    };
                 }
                 case "-": {
-                    return sub(lhs, rhs);
+                    return {
+                        num: sub(lhs.num, convert(rhs.num, rhs.unit, lhs.unit)),
+                        unit: lhs.unit ?? rhs.unit
+                    };
                 }
                 case "*": {
-                    return mul(lhs, rhs);
+                    return {
+                        num: mul(lhs.num, rhs.num),
+                        unit: mulUnits(lhs.unit, rhs.unit)
+                    };
                 }
                 case "/": {
-                    return div(lhs, rhs);
+                    return {
+                        num: div(lhs.num, rhs.num),
+                        unit: divUnits(lhs.unit, rhs.unit)
+                    };
                 }
                 case "%": {
-                    return mod(lhs, rhs);
+                    return {
+                        num: mod(lhs.num, convert(rhs.num, rhs.unit, lhs.unit)),
+                        unit: lhs.unit ?? rhs.unit
+                    };
                 }
                 case "**": {
-                    return pow(lhs, rhs);
+                    if (rhs.unit !== null && rhs.unit.baseUnits.length != 0) {
+                        throw new Error();
+                    }
+
+                    const powArgNum = rhs.unit === null ? rhs.num : mul(rhs.unit.scale, rhs.num);
+
+                    if (powArgNum.type != "int") {
+                        throw new Error();
+                    }
+                    
+                    return {
+                        num: pow(lhs.num, powArgNum),
+                        unit: powUnit(lhs.unit, powArgNum.int)
+                    };
                 }
             }
         }
@@ -33,7 +68,10 @@ export function runCalc(ast: AST, inputs: Num[]): Num {
 
             switch (ast.op) {
                 case "_": {
-                    return neg(arg);
+                    return {
+                        num: neg(arg.num),
+                        unit: arg.unit
+                    };
                 }
                 default: {
                     throw new ReferenceError();
@@ -41,10 +79,25 @@ export function runCalc(ast: AST, inputs: Num[]): Num {
             }
         }
         case "unitOp": {
-            return runCalc(ast.arg, inputs);
+            const arg = runCalc(ast.arg, inputs);
+
+            if (arg.unit !== null) {
+                return {
+                    num: convert(arg.num, arg.unit, ast.unit),
+                    unit: ast.unit
+                };
+            } else {
+                return {
+                    num: arg.num,
+                    unit: ast.unit
+                };
+            }
         }
         case "num": {
-            return ast.num;
+            return {
+                num: ast.num,
+                unit: null
+            };
         }
         case "input": {
             return inputs.shift()!;

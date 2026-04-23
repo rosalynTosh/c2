@@ -101,10 +101,8 @@ export function parseUnit(unit: string): Unit[] {
 
         return filteredFound.map(({ unitId }) => {
             const baseUnit: BaseUnit = {
-                type: "base",
                 unitId,
-                pow: sqOrCbPow,
-                scale: pow(scale, { type: "int", int: sqOrCbPow })
+                pow: sqOrCbPow
             };
 
             const disp = dispFluid === null ? null : dispType(UNIT_PROPS[unitId].quantity);
@@ -113,12 +111,15 @@ export function parseUnit(unit: string): Unit[] {
 
             const gPow = (weightForce ? 1n : 0n) * sqOrCbPow + (disp === null || dispMod!.modStr.match(/disp/gi) !== null ? 0n : disp == "mul" ? 1n : -1n);
 
-            return [
-                baseUnit,
-                ...(light ? [{ type: "base", unitId: "speed_of_light", pow: sqOrCbPow, scale: ONE } satisfies BaseUnit] : []),
-                ...(gPow != 0n ? [{ type: "base", unitId: "standard_gravity", pow: gPow, scale: ONE } satisfies BaseUnit] : []),
-                ...(disp !== null ? [{ type: "base", unitId: "density_" + dispFluid, pow: disp == "mul" ? 1n : -1n, scale: ONE } satisfies BaseUnit] : []),
-            ];
+            return {
+                scale: pow(scale, { type: "int", int: sqOrCbPow }),
+                baseUnits: [
+                    baseUnit,
+                    ...(light ? [{ unitId: "speed_of_light", pow: sqOrCbPow } satisfies BaseUnit] : []),
+                    ...(gPow != 0n ? [{ unitId: "standard_gravity", pow: gPow } satisfies BaseUnit] : []),
+                    ...(disp !== null ? [{ unitId: "density_" + dispFluid, pow: disp == "mul" ? 1n : -1n } satisfies BaseUnit] : []),
+                ]
+            };
         }).filter((unit) => unit !== null);
     }
 

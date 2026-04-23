@@ -1,3 +1,4 @@
+import { findApprox } from "./calc/const_approx";
 import { CalcModule } from "./calc/index";
 import { ColorModule } from "./color";
 
