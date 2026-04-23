@@ -39,3 +39,25 @@ export const SPEED_OF_LIGHT: Num = int(299_792_458n); // m/s
 export const BOLTZMANN_CONSTANT: Num = rational(1_380_649n, 1_000_000n * 10n ** 23n); // J/K
 
 export const ELEMENTARY_CHARGE: Num = rational(1_602_176_634n, 1_000_000_000n * 10n ** 19n); // C
+
+// table
+
+export const CONSTS: { [id: string]: Num } = {
+    PI,
+    TAU,
+    SQRT_TAU,
+    LN_2,
+    LN_3,
+    LN_5,
+    LN_7,
+    LN_11,
+    LN_13,
+    LN_17,
+    N_A,
+    PLANCK_CONSTANT,
+    REDUCED_PLANCK_CONSTANT,
+    GRAVITATIONAL_CONSTANT,
+    SPEED_OF_LIGHT,
+    BOLTZMANN_CONSTANT,
+    ELEMENTARY_CHARGE,
+};

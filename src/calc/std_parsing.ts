@@ -1,9 +1,10 @@
-import { AST, BinOpAST } from "./ast";
+import { AST, BinOpAST, NumAST } from "./ast";
+import { CONSTS } from "./consts";
 import { simplify } from "./numbers";
 import { parseUnit } from "./units/unit_parsing";
 
 export function parseStd(input: string): AST {
-    const toks = (input.match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*|[a-zA-Z\xb0]+(?:_+[a-zA-Z\xb0]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
+    const toks = (input.normalize("NFC").match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*(?:(?:\s*|_)[a-zA-Z\xb0åÄµöÖΩ]+(?:_+[a-zA-Z\xb0åÄµöÖΩ]+)*)?|[a-zA-Z]+(?:_+[a-zA-Z]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
 
     type Grouping = {
         toks: (string | Grouping)[],
@@ -146,7 +147,7 @@ export function parseStd(input: string): AST {
     function parseUnaryOps(toks: Grouping["toks"]): AST {
         console.log("unaryOps", toks);
 
-        if (toks.length != 0 && typeof toks[0] == "string" && toks[0][0].match(/[a-zA-Z_]/)) {
+        if (toks.length != 0 && typeof toks[0] == "string" && toks[0][0].match(/[a-z_]/)) {
             return {
                 type: "unaryOp",
                 op: toks[0],
@@ -164,13 +165,7 @@ export function parseStd(input: string): AST {
         if (toks.length != 0) {
             const lastTok = toks[toks.length - 1];
 
-            if (typeof lastTok == "string" && lastTok[0].match(/[a-zA-Z\xb0]/)) {
-                return {
-                    type: "unitOp",
-                    unit: parseUnit(lastTok)[0] ?? [], // todo
-                    arg: parseSingleThing(toks.slice(0, -1))
-                };
-            } else if (typeof lastTok == "object" && lastTok.type == "[]") {
+            if (typeof lastTok == "object" && lastTok.type == "[]") {
                 return {
                     type: "unitOp",
                     // unit: parseFullUnit(lastTok.toks),
@@ -192,28 +187,48 @@ export function parseStd(input: string): AST {
                 type: "input"
             };
         } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[0-9]/)) {
-            const numStr = toks[0].replace(/_/g, "");
+            const splitNum = toks[0].split(/(?<=[0-9])(?:\s*|_)(?=[^.0-9_])/);
+            const numStr = splitNum[0].replace(/_/g, "");
+
+            let num: NumAST;
 
             if (!numStr.includes(".")) {
-                return {
+                num = {
                     type: "num",
                     num: {
                         type: "int",
                         int: BigInt(numStr)
                     }
                 };
+            } else {
+                num = {
+                    type: "num",
+                    num: simplify({
+                        type: "rational",
+                        n: BigInt(numStr.replace(/\./, "")),
+                        d: 10n ** BigInt((numStr.length - 1) - numStr.indexOf("."))
+                    })
+                };
+            }
+
+            return 1 in splitNum ? {
+                type: "unitOp",
+                unit: parseUnit(splitNum[1])[0] ?? [],
+                arg: num
+            } : num;
+        } else if (toks.length == 1 && typeof toks[0] == "object" && toks[0].type == "()") {
+            return parseBinOps1(toks[0].toks);
+        } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[A-Z]/)) {
+            const num = CONSTS[toks[0]];
+
+            if (num === undefined) {
+                throw new SyntaxError();
             }
 
             return {
                 type: "num",
-                num: simplify({
-                    type: "rational",
-                    n: BigInt(numStr.replace(/\./, "")),
-                    d: 10n ** BigInt((numStr.length - 1) - numStr.indexOf("."))
-                })
+                num
             };
-        } else if (toks.length == 1 && typeof toks[0] == "object" && toks[0].type == "()") {
-            return parseBinOps1(toks[0].toks);
         } else {
             throw new SyntaxError();
         }
