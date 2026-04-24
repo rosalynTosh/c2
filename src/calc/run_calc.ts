@@ -3,16 +3,21 @@ import { add, div, mod, mul, neg, Num, pow, sub } from "./numbers";
 import { convert, divUnits, mulUnits, powUnit } from "./units/ops";
 import { Unit } from "./units/unit";
 
-export interface Value {
+interface InternalValue {
     num: Num;
     unit: Unit | null;
 }
 
-export function runCalc(ast: AST, inputs: Value[]): Value {
+export interface Value {
+    num: Num;
+    unit: Unit;
+}
+
+function runCalcInternal(ast: AST, inputs: Value[]): InternalValue {
     switch (ast.type) {
         case "binOp": {
-            const lhs = runCalc(ast.lhs, inputs);
-            const rhs = runCalc(ast.rhs, inputs);
+            const lhs = runCalcInternal(ast.lhs, inputs);
+            const rhs = runCalcInternal(ast.rhs, inputs);
 
             switch (ast.op) {
                 case "+": {
@@ -55,7 +60,7 @@ export function runCalc(ast: AST, inputs: Value[]): Value {
                     if (powArgNum.type != "int") {
                         throw new Error();
                     }
-                    
+
                     return {
                         num: pow(lhs.num, powArgNum),
                         unit: powUnit(lhs.unit, powArgNum.int)
@@ -64,7 +69,7 @@ export function runCalc(ast: AST, inputs: Value[]): Value {
             }
         }
         case "unaryOp": {
-            const arg = runCalc(ast.arg, inputs);
+            const arg = runCalcInternal(ast.arg, inputs);
 
             switch (ast.op) {
                 case "_": {
@@ -79,7 +84,7 @@ export function runCalc(ast: AST, inputs: Value[]): Value {
             }
         }
         case "unitOp": {
-            const arg = runCalc(ast.arg, inputs);
+            const arg = runCalcInternal(ast.arg, inputs);
 
             if (arg.unit !== null) {
                 return {
@@ -103,4 +108,16 @@ export function runCalc(ast: AST, inputs: Value[]): Value {
             return inputs.shift()!;
         }
     }
+}
+
+export function runCalc(ast: AST, inputs: Value[]): Value {
+    const output = runCalcInternal(ast, inputs);
+
+    return {
+        num: output.num,
+        unit: output.unit ?? {
+            scale: { type: "int", int: 1n },
+            baseUnits: [],
+        },
+    };
 }

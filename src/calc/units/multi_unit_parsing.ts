@@ -6,10 +6,10 @@ import { divUnits, mulUnits, powUnit } from "./ops";
 import { Unit } from "./unit";
 import { parseUnit } from "./unit_parsing";
 
-export function parseMultiUnit(toks: Grouping["toks"], systemSettings: SystemSettings): Unit | null {
+export function parseMultiUnit(toks: Grouping["toks"], systemSettings: SystemSettings): Unit {
     // Group 1: * and /
-    function parseBinOps1(toks: Grouping["toks"]): Unit | null {
-        let state: { op: "*" | "/", lhs: Unit | null } | null = null;
+    function parseBinOps1(toks: Grouping["toks"]): Unit {
+        let state: { op: "*" | "/", lhs: Unit } | null = null;
         let idx = 0;
 
         while (true) {
@@ -37,7 +37,7 @@ export function parseMultiUnit(toks: Grouping["toks"], systemSettings: SystemSet
     }
 
     // Group 2: **
-    function parseBinOps2(toks: Grouping["toks"]): Unit | null {
+    function parseBinOps2(toks: Grouping["toks"]): Unit {
         let rhs: Unit | null = null;
         let idx = toks.length;
 
@@ -73,7 +73,7 @@ export function parseMultiUnit(toks: Grouping["toks"], systemSettings: SystemSet
     }
 
     // Group 3: unary functions
-    function parseUnaryOps(toks: Grouping["toks"]): Unit | null {
+    function parseUnaryOps(toks: Grouping["toks"]): Unit {
         if (toks.length != 0 && typeof toks[0] == "string" && toks[0] == "_") {
             const arg = parseUnaryOps(toks.slice(1));
 
@@ -89,11 +89,14 @@ export function parseMultiUnit(toks: Grouping["toks"], systemSettings: SystemSet
     }
 
     // Group 4: check for single literal or grouping
-    function parseSingleThing(toks: Grouping["toks"]): Unit | null {
+    function parseSingleThing(toks: Grouping["toks"]): Unit {
         console.log("singleThing", toks);
 
         if (toks.length == 0) {
-            return null;
+            return {
+                scale: { type: "int", int: 1n },
+                baseUnits: []
+            };
         } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[0-9]/)) {
             const splitNum = toks[0].split(/(?<=[0-9])(?:\s*|_)(?=[^.0-9_])/);
             const numStr = splitNum[0].replace(/_/g, "");

@@ -16,7 +16,7 @@ export interface UnaryOpAST {
 
 export interface UnitOpAST {
     readonly type: "unitOp";
-    readonly unit: Unit | null;
+    readonly unit: Unit;
     readonly arg: AST;
 }
 

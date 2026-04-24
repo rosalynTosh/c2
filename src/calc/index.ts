@@ -98,7 +98,7 @@ export class CalcModule {
         return span;
     }
 
-    private formatUnit(unit: Unit): Node {
+    private formatUnit(unit: Unit): Node | null {
         const span = document.createElement("span");
 
         const scale = unit.scale;
@@ -106,12 +106,12 @@ export class CalcModule {
         let joiningSpace: boolean;
         switch (scale.type) {
             case "int": {
-                if (unit.baseUnits.length != 0) {
-                    if (scale.int == 1n) {
-                        joiningSpace = false;
-                        break;
-                    }
+                if (scale.int == 1n) {
+                    joiningSpace = false;
+                    break;
+                }
 
+                if (unit.baseUnits.length != 0) {
                     const shortMod = INT_SCALE_MODS_SHORT[String(scale.int)];
 
                     if (shortMod !== undefined) {
@@ -133,11 +133,13 @@ export class CalcModule {
             }
             case "rational": {
                 if (scale.d == 1n) {
+                    if (scale.n == 1n) {
+                        joiningSpace = false;
+                        break;
+                    }
+
                     if (unit.baseUnits.length != 0) {
-                        if (scale.n == 1n) {
-                            joiningSpace = false;
-                            break;
-                        } else if (scale.n == -1n) {
+                        if (scale.n == -1n) {
                             scaleSpan.textContent = "-";
                             joiningSpace = false;
                         } else {
@@ -160,7 +162,7 @@ export class CalcModule {
                         joiningSpace = true;
                     }
                 } else {
-                    if (scale.n == 1n || scale.n == -1n) {
+                    if (unit.baseUnits.length != 0 && (scale.n == 1n || scale.n == -1n)) {
                         const invShortMod = INV_INT_SCALE_MODS_SHORT[String(scale.d)];
 
                         if (invShortMod !== undefined) {
@@ -221,7 +223,7 @@ export class CalcModule {
             joiningSpace = true;
         }
 
-        return span;
+        return span.childNodes.length == 0 ? null : span;
     }
 
     private runStd(input: string) {
@@ -237,9 +239,13 @@ export class CalcModule {
         const logOutput = document.createElement("div");
         logOutput.appendChild(this.formatOutput(output.num));
         if (output.unit !== null) {
-            logOutput.appendChild(document.createTextNode(" ["));
-            logOutput.appendChild(this.formatUnit(output.unit));
-            logOutput.appendChild(document.createTextNode("]"));
+            const fmt = this.formatUnit(output.unit);
+
+            if (fmt !== null) {
+                logOutput.appendChild(document.createTextNode(" ["));
+                logOutput.appendChild(fmt);
+                logOutput.appendChild(document.createTextNode("]"));
+            }
         }
 
         logRow.appendChild(logOutput);
