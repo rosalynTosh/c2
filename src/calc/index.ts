@@ -1,3 +1,4 @@
+import { AST } from "./ast";
 import { CalcError, ErrType } from "./err";
 import { Num } from "./numbers";
 import { runCalc, Value } from "./run_calc";
@@ -23,10 +24,10 @@ export class CalcModule {
     private stdInput: HTMLTextAreaElement;
     private fpInput: HTMLTextAreaElement;
 
-    private inputs: Value[] = [];
-
     private historyIdx: number | null = null;
-    private history: { code: string, logRow: HTMLDivElement }[] = [];
+    private history: { code: string, ast: AST | null, output: Value | null, logRow: HTMLDivElement }[] = [];
+
+    private placeholder: string;
 
     private systemSettings: SystemSettings = {
         distance: "us_land",
@@ -42,6 +43,8 @@ export class CalcModule {
         this.stdInput = document.getElementById("calc_input_std") as HTMLTextAreaElement;
         this.fpInput = document.getElementById("calc_input_fp") as HTMLTextAreaElement;
 
+        this.placeholder = this.stdInput.placeholder;
+
         this.stdInput.addEventListener("input", () => {
             this.stdInput.parentElement!.dataset.copy = this.stdInput.value;
         });
@@ -51,7 +54,7 @@ export class CalcModule {
                 const input = this.stdInput.value.normalize("NFC").trim();
 
                 try {
-                    this.runStd(input, this.historyIdx === null ? undefined : this.history[this.historyIdx]);
+                    this.runStd(input, this.historyIdx);
 
                     this.stdInput.value = "";
                     this.stdInput.parentElement!.dataset.copy = this.stdInput.value;
@@ -66,6 +69,7 @@ export class CalcModule {
                 if (this.historyIdx === null && this.stdInput.value.normalize("NFC").trim() == "" && this.history.length > 0) {
                     this.historyIdx = this.history.length - 1;
                     this.stdInput.value = this.history[this.historyIdx].code;
+                    this.stdInput.placeholder = "";
                 } else if (this.historyIdx !== null && this.historyIdx !== 0) {
                     this.historyIdx -= 1;
                     this.stdInput.value = this.history[this.historyIdx].code;
@@ -80,6 +84,7 @@ export class CalcModule {
                 if (this.historyIdx !== null && this.historyIdx === this.history.length - 1) {
                     this.historyIdx = null;
                     this.stdInput.value = "";
+                    this.stdInput.placeholder = this.placeholder;
                 } else if (this.historyIdx !== null) {
                     this.historyIdx += 1;
                     this.stdInput.value = this.history[this.historyIdx].code;
@@ -267,14 +272,15 @@ export class CalcModule {
         return span.childNodes.length == 0 ? null : span;
     }
 
-    private runStd(input: string, historyRow?: typeof this.history[number]) {
-        let output: { success: true, value: Value } | { success: false, errType: ErrType };
+    private runStd(input: string, historyIdx: number | null) {
+        let ast: AST | null = null;
+        let output: { success: true, output: Value } | { success: false, errType: ErrType };
         try {
-            const ast = parseStd(input, this.systemSettings);
+            ast = parseStd(input, this.systemSettings);
 
             output = {
                 success: true,
-                value: runCalc(ast, [...this.inputs]),
+                output: runCalc(ast, this.history.slice(0, historyIdx ?? this.history.length).map(({ output }) => output).filter((input) => input !== null).reverse()),
             };
         } catch (err) {
             if (err instanceof CalcError) {
@@ -287,21 +293,26 @@ export class CalcModule {
             }
         }
 
-        if (output.success) this.inputs.unshift(output.value);
-
         console.log(output);
 
         const shouldScroll = this.logDiv.scrollTop >= this.logDiv.scrollHeight - this.logDiv.offsetHeight - SCROLL_GRACE_PIXELS;
 
-        const insertHistoryRow = historyRow === undefined;
+        const insertHistoryRow = historyIdx === null;
 
-        if (historyRow === undefined) {
+        let historyRow: typeof this.history[number];
+        if (historyIdx === null) {
             historyRow = {
                 code: input,
+                ast: ast,
+                output: output.success ? output.output : null,
                 logRow: document.createElement("div"),
             };
         } else {
+            historyRow = this.history[historyIdx];
+
             historyRow.code = input;
+            historyRow.ast = ast;
+            historyRow.output = output.success ? output.output : null;
             
             while (historyRow.logRow.firstChild !== null) {
                 historyRow.logRow.removeChild(historyRow.logRow.firstChild);
@@ -320,9 +331,9 @@ export class CalcModule {
         if (output.success) {
             const logOutput = document.createElement("div");
             logOutput.classList.add("calc_output");
-            logOutput.appendChild(this.formatOutput(output.value.num));
-            if (output.value.unit !== null) {
-                const fmt = this.formatUnit(output.value.unit);
+            logOutput.appendChild(this.formatOutput(output.output.num));
+            if (output.output.unit !== null) {
+                const fmt = this.formatUnit(output.output.unit);
 
                 if (fmt !== null) {
                     logOutput.appendChild(document.createTextNode(" ["));
@@ -348,6 +359,10 @@ export class CalcModule {
 
         if (shouldScroll) {
             this.logDiv.scrollTo(0, this.logDiv.scrollHeight);
+        }
+
+        if (!insertHistoryRow && historyIdx < this.history.length - 1) {
+            this.runStd(this.history[historyIdx + 1].code, historyIdx + 1);
         }
     }
 }
