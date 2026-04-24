@@ -8,7 +8,10 @@ export type ErrType = (
     "ambig_unit" |
     "unit_pow_rhs" |
     "pow_rhs" |
-    "incompat"
+    "incompat" |
+    "no_inputs" |
+    "missing_input" |
+    "cascade"
 );
 
 export class CalcError extends Error {

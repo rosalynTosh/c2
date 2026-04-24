@@ -29,4 +29,9 @@ export interface InputAST {
     readonly type: "input";
 }
 
-export type AST = BinOpAST | UnaryOpAST | UnitOpAST | NumAST | InputAST;
+export interface LogInputAST {
+    readonly type: "logInput";
+    readonly logId: number;
+}
+
+export type AST = BinOpAST | UnaryOpAST | UnitOpAST | NumAST | InputAST | LogInputAST;

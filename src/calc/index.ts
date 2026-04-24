@@ -279,9 +279,15 @@ export class CalcModule {
         try {
             ast = parseStd(input, this.systemSettings);
 
+            const inputs = this.history.slice(0, historyIdx ?? this.history.length).map(({ output }) => output);
+
             output = {
                 success: true,
-                output: runCalc(ast, this.history.slice(0, historyIdx ?? this.history.length).map(({ output }) => output).filter((input) => input !== null).reverse()),
+                output: runCalc(
+                    ast,
+                    inputs.filter((input) => input !== null).reverse(),
+                    inputs,
+                ),
             };
         } catch (err) {
             if (err instanceof CalcError) {

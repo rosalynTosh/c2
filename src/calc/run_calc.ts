@@ -1,6 +1,6 @@
 import { AST } from "./ast";
 import { CalcError } from "./err";
-import { add, div, mod, mul, neg, Num, pow, sub } from "./numbers";
+import { add, div, floor, mod, mul, neg, Num, pow, sub } from "./numbers";
 import { convert, divUnits, mulUnits, powUnit } from "./units/ops";
 import { Unit } from "./units/unit";
 
@@ -14,11 +14,11 @@ export interface Value {
     unit: Unit;
 }
 
-function runCalcInternal(ast: AST, inputs: Value[]): InternalValue {
+function runCalcInternal(ast: AST, inputs: Value[], logInputs: (Value | null)[]): InternalValue {
     switch (ast.type) {
         case "binOp": {
-            const lhs = runCalcInternal(ast.lhs, inputs);
-            const rhs = runCalcInternal(ast.rhs, inputs);
+            const lhs = runCalcInternal(ast.lhs, inputs, logInputs);
+            const rhs = runCalcInternal(ast.rhs, inputs, logInputs);
 
             switch (ast.op) {
                 case "+": {
@@ -57,26 +57,43 @@ function runCalcInternal(ast: AST, inputs: Value[]): InternalValue {
                     }
 
                     const powArgNum = rhs.unit === null ? rhs.num : mul(rhs.unit.scale, rhs.num);
-                    const rhsInt = powArgNum.type == "int" ? powArgNum.int : powArgNum.type == "rational" && powArgNum.d == 1n ? powArgNum.n : null;
 
-                    if (rhsInt === null) {
-                        throw new CalcError("pow_rhs");
+                    if (lhs.unit !== null && lhs.unit.baseUnits.length != 0) {
+                        const rhsInt = powArgNum.type == "int" ? powArgNum.int : powArgNum.type == "rational" && powArgNum.d == 1n ? powArgNum.n : null;
+
+                        if (rhsInt === null) {
+                            throw new CalcError("pow_rhs");
+                        }
+
+                        return {
+                            num: pow(lhs.num, { type: "int", int: rhsInt }),
+                            unit: powUnit(lhs.unit, rhsInt)
+                        };
+                    } else {
+                        return {
+                            num: pow(lhs.num, powArgNum),
+                            unit: lhs.unit === null ? null : {
+                                scale: pow(lhs.unit.scale, powArgNum),
+                                baseUnits: []
+                            }
+                        };
                     }
-
-                    return {
-                        num: pow(lhs.num, { type: "int", int: rhsInt }),
-                        unit: powUnit(lhs.unit, rhsInt)
-                    };
                 }
             }
         }
         case "unaryOp": {
-            const arg = runCalcInternal(ast.arg, inputs);
+            const arg = runCalcInternal(ast.arg, inputs, logInputs);
 
             switch (ast.op) {
                 case "_": {
                     return {
                         num: neg(arg.num),
+                        unit: arg.unit
+                    };
+                }
+                case "floor": {
+                    return {
+                        num: floor(arg.num),
                         unit: arg.unit
                     };
                 }
@@ -86,7 +103,7 @@ function runCalcInternal(ast: AST, inputs: Value[]): InternalValue {
             }
         }
         case "unitOp": {
-            const arg = runCalcInternal(ast.arg, inputs);
+            const arg = runCalcInternal(ast.arg, inputs, logInputs);
 
             if (arg.unit !== null) {
                 return {
@@ -107,13 +124,32 @@ function runCalcInternal(ast: AST, inputs: Value[]): InternalValue {
             };
         }
         case "input": {
-            return inputs.shift()!;
+            const input = inputs.shift();
+
+            if (input === undefined) {
+                throw new CalcError("no_inputs");
+            }
+
+            return input;
+        }
+        case "logInput": {
+            const input = logInputs[ast.logId];
+
+            if (input === undefined) {
+                throw new CalcError("missing_input");
+            }
+
+            if (input === null) {
+                throw new CalcError("cascade");
+            }
+
+            return input;
         }
     }
 }
 
-export function runCalc(ast: AST, inputs: Value[]): Value {
-    const output = runCalcInternal(ast, inputs);
+export function runCalc(ast: AST, inputs: Value[], logInputs: (Value | null)[]): Value {
+    const output = runCalcInternal(ast, inputs, logInputs);
 
     return {
         num: output.num,

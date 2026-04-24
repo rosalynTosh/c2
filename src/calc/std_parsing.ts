@@ -15,7 +15,7 @@ export type Grouping = {
 };
 
 export function parseStd(input: string, systemSettings: SystemSettings): AST {
-    const toks = (input.normalize("NFC").match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*(?:(?:\s*|_)[a-zA-Z\xb0åÄµöÖΩ]+(?:_+[a-zA-Z\xb0åÄµöÖΩ]+)*)?|[a-zA-Z\xb0åÄµöÖΩ][a-zA-Z\xb0åÄµöÖΩ0-9]*(?:_+[a-zA-Z\xb0åÄµöÖΩ0-9]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
+    const toks = (input.normalize("NFC").match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*(?:(?:\s*|_)[a-zA-Z\xb0åÄµöÖΩ]+(?:_+[a-zA-Z\xb0åÄµöÖΩ]+)*)?|[a-zA-Z\xb0åÄµöÖΩ.][a-zA-Z\xb0åÄµöÖΩ0-9]*(?:_+[a-zA-Z\xb0åÄµöÖΩ0-9]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
 
     const groupingStack: Grouping[] = [];
     let groupingToks: Grouping["toks"] = [];
@@ -231,7 +231,7 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
             } : num;
         } else if (toks.length == 1 && typeof toks[0] == "object" && toks[0].type == "()") {
             return parseBinOps1(toks[0].toks);
-        } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[A-Z]/)) {
+        } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[A-Z]/) !== null) {
             if (toks[0].match(/^LN_[1-9]\d*$/)) {
                 function factor(num: bigint): bigint[] | null {
                     if (num == 1n) return [];
@@ -268,6 +268,11 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
             return {
                 type: "num",
                 num
+            };
+        } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0].match(/^\.(?:0|[1-9][0-9]*)$/) !== null) {
+            return {
+                type: "logInput",
+                logId: Number(toks[0].slice(1))
             };
         } else {
             throw new CalcError("syntax");

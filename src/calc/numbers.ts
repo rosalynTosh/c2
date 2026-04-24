@@ -22,6 +22,12 @@ export function simplify(num: RationalNum): RationalNum {
     let num_n = num.n < 0n ? -num.n : num.n;
     let num_d = num.d;
 
+    if (num_d == 0n) return num_n == 0n ? num : {
+        type: "rational",
+        n: num.n / num_n,
+        d: 0n
+    };
+
     let gcd: bigint;
 
     if (num_n == 0n) {
