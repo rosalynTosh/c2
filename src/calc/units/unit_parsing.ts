@@ -1,12 +1,12 @@
 import { Num, pow } from "../numbers";
-import { BINARY_PREFIXES_LONG, BINARY_PREFIXES_SHORT, SI_PREFIXES_LONG, SI_PREFIXES_SHORT } from "./scale_mods";
+import { BINARY_SCALE_MODS_LONG, BINARY_SCALE_MODS_SHORT, SI_SCALE_MODS_LONG, SI_SCALE_MODS_SHORT } from "./scale_mods";
 import { BaseUnit, Unit } from "./unit";
 import { dispType, UNIT_PROPS } from "./unit_props";
-import { ref } from "./unit_reference";
+import { UNIT_REFERENCE } from "./unit_reference";
 
 const scaleRegExps = [
-    ...[...Object.keys(SI_PREFIXES_SHORT), ...Object.keys(BINARY_PREFIXES_SHORT)].map((scale) => new RegExp(scale, "g")),
-    ...[...Object.keys(SI_PREFIXES_LONG), ...Object.keys(BINARY_PREFIXES_LONG)].map((scale) => new RegExp(scale, "gi")),
+    ...[...Object.keys(SI_SCALE_MODS_SHORT), ...Object.keys(BINARY_SCALE_MODS_SHORT)].map((scale) => new RegExp(scale, "g")),
+    ...[...Object.keys(SI_SCALE_MODS_LONG), ...Object.keys(BINARY_SCALE_MODS_LONG)].map((scale) => new RegExp(scale, "gi")),
 ];
 
 export function parseUnit(unit: string): { unit: Unit, modCount: number, usesLongShortMod: boolean }[] {
@@ -77,11 +77,11 @@ export function parseUnit(unit: string): { unit: Unit, modCount: number, usesLon
         if (weightForceMod !== null && dispMod !== null) return [];
 
         const words = parts.flatMap(p => p.split("_")).filter(w => w != "").join("_");
-        let found = ref.get(words);
+        let found = UNIT_REFERENCE.get(words);
 
         if (found === undefined) return [];
 
-        if (scaleMod !== null && scaleMod.modStr in BINARY_PREFIXES_SHORT) {
+        if (scaleMod !== null && scaleMod.modStr in BINARY_SCALE_MODS_SHORT) {
             found = found.filter((f) => ["information_entropy", "information_rate"].includes(UNIT_PROPS[f.unitId].quantity));
         }
 
@@ -116,10 +116,10 @@ export function parseUnit(unit: string): { unit: Unit, modCount: number, usesLon
         const filteredFound = includeLowercases ? found : found.filter(({ lowercases }) => lowercases == 0);
 
         const scale = scaleMod === null ? ONE : (
-            SI_PREFIXES_LONG[scaleMod.modStr] ??
-            SI_PREFIXES_SHORT[scaleMod.modStr] ??
-            BINARY_PREFIXES_LONG[scaleMod.modStr] ??
-            BINARY_PREFIXES_SHORT[scaleMod.modStr]
+            SI_SCALE_MODS_LONG[scaleMod.modStr] ??
+            SI_SCALE_MODS_SHORT[scaleMod.modStr] ??
+            BINARY_SCALE_MODS_LONG[scaleMod.modStr] ??
+            BINARY_SCALE_MODS_SHORT[scaleMod.modStr]
         );
 
         const light = lightMod !== null;
@@ -153,7 +153,7 @@ export function parseUnit(unit: string): { unit: Unit, modCount: number, usesLon
                     ]
                 },
                 modCount: [scaleMod, lightMod, sqOrCb, weightForceMod, dispMod].filter((mod) => mod !== null).length,
-                usesLongShortMod: scaleMod !== null && scaleMod.modStr in SI_PREFIXES_SHORT && scaleMod.modStr.length > 1
+                usesLongShortMod: scaleMod !== null && scaleMod.modStr in SI_SCALE_MODS_SHORT && scaleMod.modStr.length > 1
             };
         }).filter((unit) => unit !== null);
     }
@@ -181,7 +181,7 @@ export function parseUnit(unit: string): { unit: Unit, modCount: number, usesLon
     parseWeightForce = buildParserStage("weightForce", null, [/weight/gi, /wg?h?t/g, /w/g, /force/gi, /f/g], (lo, _hi) => lo != "", parseDisp);
     parseSqOrCb = buildParserStage("sqOrCb", null, [/sq/gi, /square/gi, /c[bu]/gi, /cubic/gi], (lo, hi) => lo != "" || hi != "", parseWeightForce);
     parseLight = buildParserStage("light", null, [/l/g, /light/gi], (_lo, hi, modStr) => modStr == "l" ? hi.match(/^[^_]/) !== null : hi != "", parseSqOrCb);
-    parseScale = buildParserStage("scale", null, scaleRegExps, (_lo, hi, modStr) => (modStr in SI_PREFIXES_LONG || modStr in BINARY_PREFIXES_LONG) ? hi != "" : hi.match(/^[^_]/) !== null, parseLight);
+    parseScale = buildParserStage("scale", null, scaleRegExps, (_lo, hi, modStr) => (modStr in SI_SCALE_MODS_LONG || modStr in BINARY_SCALE_MODS_LONG) ? hi != "" : hi.match(/^[^_]/) !== null, parseLight);
 
     return parseScale([unit], new Map());
 }

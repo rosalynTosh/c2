@@ -121,7 +121,7 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
         let rhs: AST | null = null;
         let idx = toks.length;
 
-        while (true) {
+        while (idx > 0) {
             const idxPow = toks.lastIndexOf("**", idx - 1);
 
             if (idxPow == -1) {
@@ -144,6 +144,14 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
                 idx = idxPow;
             }
         }
+
+        const lhs = parseUnaryOps(toks.slice(0, idx));
+
+        return rhs === null ? lhs : {
+            type: "binOp",
+            op: "**",
+            lhs, rhs
+        };
     }
 
     // Group 4: unary functions
@@ -164,7 +172,7 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
     function disambiguateUnit(units: ReturnType<typeof parseUnit>, str?: string): Unit {
         if (units.length == 0) throw new Error();
         if (units.length == 1) {
-            // console.log((units[0].unit.scale.type == "int" ? units[0].unit.scale.int : units[0].unit.scale.type == "rational" ? units[0].unit.scale.n + " / " + units[0].unit.scale.d : units[0].unit.scale.num) + units[0].unit.baseUnits.map((baseUnit) => " " + baseUnit.unitId + (baseUnit.pow == 1n ? "" : "**" + baseUnit.pow)).join(""));
+            console.log((units[0].unit.scale.type == "int" ? units[0].unit.scale.int : units[0].unit.scale.type == "rational" ? units[0].unit.scale.n + " / " + units[0].unit.scale.d : units[0].unit.scale.num) + units[0].unit.baseUnits.map((baseUnit) => " " + baseUnit.unitId + (baseUnit.pow == 1n ? "" : "**" + baseUnit.pow)).join(""));
 
             return units[0].unit;
         }
@@ -176,9 +184,9 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
             return disambiguateUnit(units.filter(({ modCount }) => modCount == minModCount), str);
         }
 
-        if (units.some(({ usesLongShortMod }) => usesLongShortMod) && units.some(({ usesLongShortMod }) => !usesLongShortMod)) {
-            return disambiguateUnit(units.filter(({ usesLongShortMod }) => usesLongShortMod), str);
-        }
+        // if (units.some(({ usesLongShortMod }) => usesLongShortMod) && units.some(({ usesLongShortMod }) => !usesLongShortMod)) {
+        //     return disambiguateUnit(units.filter(({ usesLongShortMod }) => !usesLongShortMod), str);
+        // }
 
         const disambiguators = (["distance", "ptStandsFor", "volume", "weight", "ton", "calendar"] as const).filter((d) => units.every(({ unit }) => unit.baseUnits.some((b) => d in (UNIT_PROPS[b.unitId].disambiguators ?? {}))));
 

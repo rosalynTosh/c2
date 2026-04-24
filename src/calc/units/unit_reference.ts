@@ -185,7 +185,7 @@ function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
     return forms;
 }
 
-export function buildUnitReference(): Map<string, { unitId: string, lowercases: number }[]> {
+function buildUnitReference(): Map<string, { unitId: string, lowercases: number }[]> {
     const ref: Map<string, { unitId: string, lowercases: number }[]> = new Map();
 
     for (const unitId in UNIT_PROPS) {
@@ -205,6 +205,4 @@ export function buildUnitReference(): Map<string, { unitId: string, lowercases: 
     return ref;
 }
 
-export const ref = buildUnitReference();
-
-console.log(ref);
+export const UNIT_REFERENCE = buildUnitReference();

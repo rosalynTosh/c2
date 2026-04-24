@@ -1,6 +1,6 @@
 import { Num } from "../numbers";
 
-export const SI_PREFIXES_LONG: { [prefix: string]: Num } = {
+export const SI_SCALE_MODS_LONG: { [prefix: string]: Num } = {
     "quecto": { type: "rational", n: 1n, d: 10n ** 30n },
     "ronto": { type: "rational", n: 1n, d: 10n ** 27n },
     "yocto": { type: "rational", n: 1n, d: 10n ** 24n },
@@ -27,7 +27,7 @@ export const SI_PREFIXES_LONG: { [prefix: string]: Num } = {
     "quetta": { type: "int", int: 10n ** 30n },
 };
 
-export const SI_PREFIXES_SHORT: { [prefix: string]: Num } = {
+export const SI_SCALE_MODS_SHORT: { [prefix: string]: Num } = {
     "q": { type: "rational", n: 1n, d: 10n ** 30n },
     "r": { type: "rational", n: 1n, d: 10n ** 27n },
     "y": { type: "rational", n: 1n, d: 10n ** 24n },
@@ -42,6 +42,7 @@ export const SI_PREFIXES_SHORT: { [prefix: string]: Num } = {
     "c": { type: "rational", n: 1n, d: 100n },
     "d": { type: "rational", n: 1n, d: 10n },
     "da": { type: "int", int: 10n },
+    "D": { type: "int", int: 10n },
     "h": { type: "int", int: 100n },
     "k": { type: "int", int: 1000n },
     "M": { type: "int", int: 1_000_000n },
@@ -55,7 +56,7 @@ export const SI_PREFIXES_SHORT: { [prefix: string]: Num } = {
     "Q": { type: "int", int: 10n ** 30n },
 };
 
-export const BINARY_PREFIXES_LONG: { [prefix: string]: Num } = {
+export const BINARY_SCALE_MODS_LONG: { [prefix: string]: Num } = {
     "kibi": { type: "int", int: 1024n },
     "mebi": { type: "int", int: 1024n ** 2n },
     "gibi": { type: "int", int: 1024n ** 3n },
@@ -68,7 +69,7 @@ export const BINARY_PREFIXES_LONG: { [prefix: string]: Num } = {
     "quebi": { type: "int", int: 1024n ** 10n },
 };
 
-export const BINARY_PREFIXES_SHORT: { [prefix: string]: Num } = {
+export const BINARY_SCALE_MODS_SHORT: { [prefix: string]: Num } = {
     "Ki": { type: "int", int: 1024n },
     "Mi": { type: "int", int: 1024n ** 2n },
     "Gi": { type: "int", int: 1024n ** 3n },
@@ -79,4 +80,90 @@ export const BINARY_PREFIXES_SHORT: { [prefix: string]: Num } = {
     "Yi": { type: "int", int: 1024n ** 8n },
     "Ri": { type: "int", int: 1024n ** 9n },
     "Qi": { type: "int", int: 1024n ** 10n },
+};
+
+export const INT_SCALE_MODS_LONG = {
+    "1": "",
+    "10": "deca",
+    "100": "hecto",
+    "1000": "kilo",
+    "1000000": "mega",
+    [String(10n ** 9n)]: "giga",
+    [String(10n ** 12n)]: "tera",
+    [String(10n ** 15n)]: "peta",
+    [String(10n ** 18n)]: "exa",
+    [String(10n ** 21n)]: "zetta",
+    [String(10n ** 24n)]: "yotta",
+    [String(10n ** 27n)]: "ronna",
+    [String(10n ** 30n)]: "quetta",
+
+    [String(1024n ** 1n)]: "kibi",
+    [String(1024n ** 2n)]: "mebi",
+    [String(1024n ** 3n)]: "gibi",
+    [String(1024n ** 4n)]: "tebi",
+    [String(1024n ** 5n)]: "pebi",
+    [String(1024n ** 6n)]: "exbi",
+    [String(1024n ** 7n)]: "zebi",
+    [String(1024n ** 8n)]: "yobi",
+    [String(1024n ** 9n)]: "robi",
+    [String(1024n ** 10n)]: "quebi",
+};
+
+export const INT_SCALE_MODS_SHORT = {
+    "1": "",
+    "10": "D",
+    "100": "h",
+    "1000": "k",
+    "1000000": "M",
+    [String(10n ** 9n)]: "G",
+    [String(10n ** 12n)]: "T",
+    [String(10n ** 15n)]: "P",
+    [String(10n ** 18n)]: "E",
+    [String(10n ** 21n)]: "Z",
+    [String(10n ** 24n)]: "Y",
+    [String(10n ** 27n)]: "R",
+    [String(10n ** 30n)]: "Q",
+
+    [String(1024n ** 1n)]: "Ki",
+    [String(1024n ** 2n)]: "Mi",
+    [String(1024n ** 3n)]: "Gi",
+    [String(1024n ** 4n)]: "Ti",
+    [String(1024n ** 5n)]: "Pi",
+    [String(1024n ** 6n)]: "Ei",
+    [String(1024n ** 7n)]: "Zi",
+    [String(1024n ** 8n)]: "Yi",
+    [String(1024n ** 9n)]: "Ri",
+    [String(1024n ** 10n)]: "Qi",
+};
+
+export const INV_INT_SCALE_MODS_LONG = {
+    "1": "",
+    "10": "deci",
+    "100": "centi",
+    "1000": "milli",
+    "1000000": "micro",
+    [String(10n ** 9n)]: "nano",
+    [String(10n ** 12n)]: "pico",
+    [String(10n ** 15n)]: "femto",
+    [String(10n ** 18n)]: "atto",
+    [String(10n ** 21n)]: "zepto",
+    [String(10n ** 24n)]: "yocto",
+    [String(10n ** 27n)]: "ronto",
+    [String(10n ** 30n)]: "quecto",
+};
+
+export const INV_INT_SCALE_MODS_SHORT = {
+    "1": "",
+    "10": "d",
+    "100": "c",
+    "1000": "m",
+    "1000000": "µ",
+    [String(10n ** 9n)]: "n",
+    [String(10n ** 12n)]: "p",
+    [String(10n ** 15n)]: "f",
+    [String(10n ** 18n)]: "a",
+    [String(10n ** 21n)]: "z",
+    [String(10n ** 24n)]: "y",
+    [String(10n ** 27n)]: "r",
+    [String(10n ** 30n)]: "q",
 };

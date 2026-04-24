@@ -214,7 +214,7 @@ input:focus {
     overflow: scroll;
     max-height: 525.5px; /* 593.5 - 4 [border] - 40 [input] - 24 [padding] */
     
-    font-family: "Roboto Mono", monospace;
+    /* font-family: "Roboto Mono", monospace; */
 }
 
 .calc_code {

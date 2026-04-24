@@ -461,7 +461,7 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
 
         forms: simpleForms(["mile"]),
         shortForms: simpleForms(["mi"]),
-        rawShortForms: ["NM", "nmi", "n_mi", "mi_n"],
+        rawShortForms: ["nmi", "NM", "n_mi", "mi_n"],
     },
     "nautical_league": {
         quantity: "length",
@@ -473,7 +473,7 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
 
         forms: simpleForms(["league"]),
         shortForms: simpleForms(["lea"]),
-        rawShortForms: ["NL", "nlea", "n_lea", "lea_n"],
+        rawShortForms: ["nlea", "NL", "n_lea", "lea_n"],
     },
     "link": {
         quantity: "length",
