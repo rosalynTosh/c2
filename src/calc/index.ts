@@ -15,6 +15,8 @@ export interface SystemSettings {
     calendar: CalendarSystem;
 }
 
+const SCROLL_GRACE_PIXELS = 12;
+
 export class CalcModule {
     private logDiv: HTMLDivElement;
     private stdInput: HTMLTextAreaElement;
@@ -44,9 +46,14 @@ export class CalcModule {
             if (event.code === "Enter" && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
                 const input = this.stdInput.value.normalize("NFC").trim();
 
-                this.runStd(input);
+                try {
+                    this.runStd(input);
 
-                event.preventDefault();
+                    this.stdInput.value = "";
+                    this.stdInput.parentElement!.dataset.copy = this.stdInput.value;
+                } finally {
+                    event.preventDefault();
+                }
             }
         });
 
@@ -75,14 +82,14 @@ export class CalcModule {
 
         switch (num.type) {
             case "int": {
-                span.textContent = String(num.int);
+                span.textContent = String(num.int).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&");
                 break;
             }
             case "rational": {
                 if (num.d == 1n) {
                     span.textContent = String(num.n);
                 } else {
-                    span.textContent = num.n + " / " + num.d;
+                    span.textContent = String(num.n).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&") + " / " + String(num.d).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&");
                 }
                 break;
             }
@@ -124,7 +131,7 @@ export class CalcModule {
                     }
                 }
 
-                scaleSpan.textContent = String(scale.int);
+                scaleSpan.textContent = String(scale.int).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&");
                 joiningSpace = true;
 
                 span.appendChild(scaleSpan);
@@ -154,11 +161,11 @@ export class CalcModule {
                                 break;
                             }
 
-                            scaleSpan.textContent = String(scale.n);
+                            scaleSpan.textContent = String(scale.n).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&");
                             joiningSpace = true;
                         }
                     } else {
-                        scaleSpan.textContent = String(scale.n);
+                        scaleSpan.textContent = String(scale.n).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&");
                         joiningSpace = true;
                     }
                 } else {
@@ -175,7 +182,7 @@ export class CalcModule {
                         }
                     }
 
-                    scaleSpan.textContent = scale.n + " / " + scale.d;
+                    scaleSpan.textContent = String(scale.n).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&") + " / " + String(scale.d).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&");
                     joiningSpace = true;
                 }
 
@@ -230,13 +237,21 @@ export class CalcModule {
         const ast = parseStd(input, this.systemSettings);
         const output = runCalc(ast, [...this.history]);
 
+        this.history.unshift(output);
+
+        console.log(output);
+
+        const shouldScroll = this.logDiv.scrollTop >= this.logDiv.scrollHeight - this.logDiv.offsetHeight - SCROLL_GRACE_PIXELS;
+
         const logRow = document.createElement("div");
 
         const logCode = document.createElement("div");
+        logCode.classList.add("calc_code");
         logCode.textContent = input;
         logRow.appendChild(logCode);
 
         const logOutput = document.createElement("div");
+        logOutput.classList.add("calc_output");
         logOutput.appendChild(this.formatOutput(output.num));
         if (output.unit !== null) {
             const fmt = this.formatUnit(output.unit);
@@ -252,11 +267,8 @@ export class CalcModule {
 
         this.logDiv.appendChild(logRow);
 
-        this.history.unshift(output);
-
-        console.log(output);
-
-        this.stdInput.value = "";
-        this.stdInput.parentElement!.dataset.copy = this.stdInput.value;
+        if (shouldScroll) {
+            this.logDiv.scrollTo(0, this.logDiv.scrollHeight);
+        }
     }
 }

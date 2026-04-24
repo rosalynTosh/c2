@@ -163,6 +163,8 @@ input:focus {
     padding: 0 !important;
     
     font-size: 16px;
+    
+    font-family: "Roboto Mono", monospace;
 }
 
 #calc_settings {
@@ -207,18 +209,16 @@ input:focus {
 }
 
 #calc_log {
-    padding: 12px;
+    padding: 8px;
     font-size: 16px;
     white-space: pre-wrap;
     
     overflow: scroll;
     max-height: 525.5px; /* 593.5 - 4 [border] - 40 [input] - 24 [padding] */
-    
-    /* font-family: "Roboto Mono", monospace; */
 }
 
 .calc_code {
-    color: #888888;
+    color: #444444;
 }
 
 .calc_output {
@@ -229,8 +229,14 @@ input:focus {
 }
 
 #calc_log > div {
+    padding: 4px 8px;
+
     display: flex;
     justify-content: space-between;
+}
+
+#calc_log > div:nth-child(even) {
+    background-color: #f0f0f0;
 }
 
 #calc_log > div > span {
@@ -238,7 +244,7 @@ input:focus {
 }
 
 #calc_log > div:not(:last-child) {
-    margin-bottom: 8px;
+    margin-bottom: 2px;
 }
 
 #calc_inputs_cont {
