@@ -68,6 +68,8 @@ export function convert(num: Num, from: Unit | null, to: Unit | null): Num {
     return sub(mul(add(num, fromOffset), div(fromFactor, toFactor)), toOffset);
 }
 
+export function mulUnits(lhs: Unit, rhs: Unit): Unit;
+export function mulUnits(lhs: Unit | null, rhs: Unit | null): Unit | null;
 export function mulUnits(lhs: Unit | null, rhs: Unit | null): Unit | null {
     if (lhs === null) return rhs;
     if (rhs === null) return lhs;
@@ -86,6 +88,8 @@ export function mulUnits(lhs: Unit | null, rhs: Unit | null): Unit | null {
     };
 }
 
+export function divUnits(lhs: Unit, rhs: Unit): Unit;
+export function divUnits(lhs: Unit | null, rhs: Unit | null): Unit | null;
 export function divUnits(lhs: Unit | null, rhs: Unit | null): Unit | null {
     if (rhs === null) return lhs;
 
@@ -109,6 +113,8 @@ export function divUnits(lhs: Unit | null, rhs: Unit | null): Unit | null {
     };
 }
 
+export function powUnit(unit: Unit, rhs: bigint): Unit;
+export function powUnit(unit: Unit | null, rhs: bigint): Unit | null;
 export function powUnit(unit: Unit | null, rhs: bigint): Unit | null {
     if (unit === null) return null;
     
