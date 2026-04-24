@@ -26,7 +26,7 @@ export type Quantity = (
     "information_entropy" | "information_rate" |
     "luminous_intensity" | "luminous_flux" | "illuminance" |
     "radiation_source_activity" | "radiation_exposure" | "radiation_absorbed_dose" | "radiation_equivalent_dose" |
-    "amount_of_substance" |
+    "amount_of_substance" | "molarity" | "molality" |
     "proportion"
 );
 
@@ -68,6 +68,8 @@ export const QUANTITY_DIMENSIONS: { [qty in Quantity]: Partial<QuantityDimension
     "radiation_absorbed_dose": { length: 2n, time: -2n },
     "radiation_equivalent_dose": { length: 2n, time: -2n },
     "amount_of_substance": { amount_of_substance: 1n },
+    "molarity": { length: -3n, amount_of_substance: 1n },
+    "molality": { mass: -1n, amount_of_substance: 1n },
     "proportion": {},
 } as const satisfies { [qty in Quantity]: Partial<QuantityDimension> };
 
@@ -568,7 +570,7 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
     // volume
     "liter": {
         quantity: "volume",
-        conversionFactor: invInt(1000n),
+        conversionFactor: invInt(1_000_000n),
 
         forms: simpleForms(["liter", "litre"]),
         shortForms: simpleForms(["L"]),
@@ -1875,6 +1877,23 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
 
         forms: simpleForms(["mole"]),
         shortForms: simpleForms(["mol"]),
+    },
+
+    // molarity
+    "molar": {
+        quantity: "molarity",
+        conversionFactor: int(1_000_000n),
+
+        forms: simpleForms(["molar"]),
+        shortForms: simpleForms(["M"]),
+    },
+
+    // molality
+    "molal": {
+        quantity: "molality",
+        conversionFactor: int(1n),
+
+        forms: simpleForms(["molal"]),
     },
 
     // proportion

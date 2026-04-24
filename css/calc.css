@@ -1,0 +1,140 @@
+#calc {
+    flex-grow: 1;
+    min-width: 288px;
+    max-width: 601px;
+    
+    display: flex;
+    flex-direction: column;
+    
+    padding: 0 !important;
+    
+    font-size: 16px;
+    
+    font-family: "Roboto Mono", monospace;
+}
+
+#calc #calc_log_cont {
+    flex-grow: 1;
+}
+
+#calc #calc_log {
+    padding: 8px;
+    font-size: 16px;
+    white-space: pre-wrap;
+    
+    overflow: scroll;
+    max-height: 525.5px; /* 593.5 - 4 [border] - 40 [input] - 24 [padding] */
+
+    display: grid;
+    grid-template-columns: min-content 1fr 1fr;
+    column-gap: 8px;
+}
+
+#calc #calc_log > div {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+
+    padding: 4px 8px;
+}
+
+#calc #calc_log > div:nth-child(even) {
+    background-color: #f0f0f0;
+}
+
+#calc .calc_id {
+    color: #444444;
+    font-size: 12px;
+}
+
+#calc .calc_code {
+    color: #000000;
+}
+
+#calc .calc_output {
+    color: #000000;
+    font-weight: bold;
+    
+    text-align: right;
+}
+
+#calc #calc_log > div.calc_err {
+    background-color: #fce9eb;
+}
+
+#calc #calc_log > div.calc_err:nth-child(even) {
+    background-color: #f9d2d7;
+}
+
+#calc .calc_err .calc_id {
+    color: #861321;
+}
+
+#calc .calc_err .calc_code {
+    color: #861321;
+}
+
+#calc .calc_err .calc_output {
+    color: #861321;
+}
+
+#calc #calc_inputs_cont {
+    display: flex;
+    
+    border-top: 1px solid #888888;
+}
+
+#calc .calc_input_cont {
+    display: grid;
+    
+    flex:1;
+}
+
+#calc .calc_input_cont:focus-within {
+    flex: 3;
+}
+
+#calc .calc_input_cont::after {
+    content: attr(data-copy) " ";
+    
+    white-space: pre-wrap;
+    visibility: hidden;
+}
+
+#calc .calc_input_cont > textarea {
+    resize: none;
+    overflow: hidden;
+}
+
+#calc .calc_input_cont > textarea, .calc_input_cont::after {
+    padding: 12px;
+    
+    border: none;
+    
+    font: inherit;
+    font-size: 16px;
+    line-height: 1.25;
+    word-break: break-all;
+    
+    background-color: inherit;
+    
+    grid-area: 1 / 1 / 2 / 2;
+}
+
+#calc .calc_input_cont > textarea:focus {
+    padding: 11px;
+    
+    border: 1px solid #66b8ff;
+    outline: 1px solid #66b8ff;
+}
+
+#calc .calc_input_border {
+    display: inline;
+    
+    height: 100%;
+    border-right: 1px solid #888888;
+    
+    position: relative;
+    z-index: -1;
+}

@@ -15,7 +15,7 @@ export type Grouping = {
 };
 
 export function parseStd(input: string, systemSettings: SystemSettings): AST {
-    const toks = (input.normalize("NFC").match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*(?:(?:\s*|_)[a-zA-Z\xb0åÄµöÖΩ]+(?:_+[a-zA-Z\xb0åÄµöÖΩ]+)*)?|[a-zA-Z][a-zA-Z0-9]*(?:_+[a-zA-Z0-9]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
+    const toks = (input.normalize("NFC").match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*(?:(?:\s*|_)[a-zA-Z\xb0åÄµöÖΩ]+(?:_+[a-zA-Z\xb0åÄµöÖΩ]+)*)?|[a-zA-Z\xb0åÄµöÖΩ][a-zA-Z\xb0åÄµöÖΩ0-9]*(?:_+[a-zA-Z\xb0åÄµöÖΩ0-9]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
 
     const groupingStack: Grouping[] = [];
     let groupingToks: Grouping["toks"] = [];

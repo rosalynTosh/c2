@@ -60,6 +60,7 @@ export class CalcModule {
                     this.stdInput.parentElement!.dataset.copy = this.stdInput.value;
 
                     this.historyIdx = null;
+                    this.stdInput.placeholder = this.placeholder;
                 } finally {
                     event.preventDefault();
                 }
@@ -322,6 +323,11 @@ export class CalcModule {
                 historyRow.logRow.classList.remove(class_);
             }
         }
+
+        const logId = document.createElement("div");
+        logId.classList.add("calc_id");
+        logId.textContent = "." + (historyIdx ?? this.history.length) + ":";
+        historyRow.logRow.append(logId);
 
         const logCode = document.createElement("div");
         logCode.classList.add("calc_code");

@@ -125,7 +125,7 @@ export function parseMultiUnit(toks: Grouping["toks"], systemSettings: SystemSet
             return 1 in splitNum ? mulUnits(numUnit, disambiguateUnit(parseUnit(splitNum[1]), systemSettings)) : numUnit;
         } else if (toks.length == 1 && typeof toks[0] == "object" && toks[0].type == "()") {
             return parseBinOps1(toks[0].toks);
-        } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[a-zA-Z]/)) {
+        } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[a-zA-Z\xb0åÄµöÖΩ]/)) {
             return disambiguateUnit(parseUnit(toks[0]), systemSettings);
         } else {
             throw new CalcError("unit_syntax");
