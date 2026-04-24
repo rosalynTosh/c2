@@ -7,6 +7,7 @@ export type ErrType = (
     "unk_unit" |
     "ambig_unit" |
     "unit_pow_rhs" |
+    "domain" |
     "pow_rhs" |
     "incompat" |
     "no_inputs" |

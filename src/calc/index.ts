@@ -126,15 +126,11 @@ export class CalcModule {
                 break;
             }
             case "rational": {
-                if (num.d == 1n) {
-                    span.textContent = String(num.n);
-                } else {
-                    span.textContent = String(num.n).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&") + " / " + String(num.d).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&");
-                }
+                span.textContent = String(num.n).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&") + " / " + String(num.d).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&");
                 break;
             }
             case "float": {
-                span.textContent = String(num.num);
+                span.textContent = String(num.num).replace(/e\+?/, "*10**").replace(/^\d+(?:$|(?=\*))/g, "$&.0");
                 break;
             }
             default: {
@@ -171,7 +167,7 @@ export class CalcModule {
                     }
                 }
 
-                scaleSpan.textContent = String(scale.int).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&");
+                scaleSpan.textContent = String(scale.int).replace(/(?<=.)...(?=(?:...)*$)/g, "_$&").replace(/^\d+(?:$|(?=\*))/g, "$&.0");
                 joiningSpace = true;
 
                 span.appendChild(scaleSpan);
@@ -231,7 +227,7 @@ export class CalcModule {
                 break;
             }
             case "float": {
-                scaleSpan.textContent = String(scale.num);
+                scaleSpan.textContent = String(scale.num).replace(/e\+?/, "*10**");
                 joiningSpace = true;
 
                 span.appendChild(scaleSpan);

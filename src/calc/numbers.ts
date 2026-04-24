@@ -1,17 +1,17 @@
 // Future todo: standardize +/-Inf and +/-0 for int/rational, prevent NaN with floats
 
-interface IntNum {
+export interface IntNum {
     readonly type: "int";
     readonly int: bigint;
 }
 
-interface RationalNum {
+export interface RationalNum {
     readonly type: "rational";
     readonly n: bigint;
     readonly d: bigint;
 }
 
-interface FloatNum {
+export interface FloatNum {
     readonly type: "float";
     readonly num: number;
 }
@@ -285,6 +285,62 @@ export function pow(lhs: Num, rhs: Num): Num {
                     return { type: "float", num: lhs.num ** rhs.num };
                 }
             }
+        }
+    }
+}
+
+export function abs(arg: Num): Num {
+    switch (arg.type) {
+        case "int": {
+            return { type: "int", int: arg.int < 0n ? -arg.int : arg.int };
+        }
+        case "rational": {
+            return { type: "rational", n: arg.n < 0n ? -arg.n : arg.n, d: arg.d };
+        }
+        case "float": {
+            return { type: "float", num: Math.abs(arg.num) };
+        }
+    }
+}
+
+export function ceil(arg: Num): Num {
+    switch (arg.type) {
+        case "int": {
+            return arg;
+        }
+        case "rational": {
+            return arg.d == 0n ? arg : { type: "rational", n: arg.n / arg.d + (arg.n <= 0n || arg.n % arg.d == 0n ? 0n : -1n), d: 1n };
+        }
+        case "float": {
+            return { type: "float", num: Math.ceil(arg.num) };
+        }
+    }
+}
+
+export function trunc(arg: Num): Num {
+    switch (arg.type) {
+        case "int": {
+            return arg;
+        }
+        case "rational": {
+            return arg.d == 0n ? arg : { type: "rational", n: arg.n / arg.d, d: 1n };
+        }
+        case "float": {
+            return { type: "float", num: Math.trunc(arg.num) };
+        }
+    }
+}
+
+export function round(arg: Num): Num {
+    switch (arg.type) {
+        case "int": {
+            return arg;
+        }
+        case "rational": {
+            return floor(add(arg, { type: "rational", n: 1n, d: 2n }));
+        }
+        case "float": {
+            return { type: "float", num: Math.round(arg.num) };
         }
     }
 }

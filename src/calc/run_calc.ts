@@ -1,6 +1,7 @@
 import { AST } from "./ast";
+import { findApprox, findQuickApprox, floatToRational, isqrt } from "./const_approx";
 import { CalcError } from "./err";
-import { add, div, floor, mod, mul, neg, Num, pow, sub } from "./numbers";
+import { abs, add, ceil, div, floor, mod, mul, neg, Num, pow, round, sub, trunc } from "./numbers";
 import { convert, divUnits, mulUnits, powUnit } from "./units/ops";
 import { Unit } from "./units/unit";
 
@@ -94,6 +95,58 @@ function runCalcInternal(ast: AST, inputs: Value[], logInputs: (Value | null)[])
                 case "floor": {
                     return {
                         num: floor(arg.num),
+                        unit: arg.unit
+                    };
+                }
+                case "ceil": {
+                    return {
+                        num: ceil(arg.num),
+                        unit: arg.unit
+                    };
+                }
+                case "trunc": {
+                    return {
+                        num: trunc(arg.num),
+                        unit: arg.unit
+                    };
+                }
+                case "round": {
+                    return {
+                        num: round(arg.num),
+                        unit: arg.unit
+                    };
+                }
+                case "abs": {
+                    return {
+                        num: abs(arg.num),
+                        unit: arg.unit
+                    };
+                }
+                case "approx":
+                case "approxSlow": {
+                    if (arg.num.type == "int") return arg;
+
+                    const rat = arg.num.type == "rational" ? arg.num : floatToRational(arg.num.num);
+
+                    console.log(rat);
+
+                    if (rat.d <= 1n) {
+                        return {
+                            num: rat,
+                            unit: arg.unit
+                        };
+                    }
+
+                    const sqrtD = isqrt(rat.d);
+                    const MAX_MAX_D = ast.op == "approxSlow" ? 100_000_000n : 100_000n;
+
+                    const maxD = sqrtD < MAX_MAX_D ? sqrtD : MAX_MAX_D;
+
+                    return {
+                        num: {
+                            type: "rational",
+                            ...findApprox(rat.n, rat.d, maxD)
+                        },
                         unit: arg.unit
                     };
                 }
