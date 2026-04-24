@@ -23,7 +23,10 @@ export class CalcModule {
     private stdInput: HTMLTextAreaElement;
     private fpInput: HTMLTextAreaElement;
 
-    private history: Value[] = [];
+    private inputs: Value[] = [];
+
+    private historyIdx: number | null = null;
+    private history: { code: string, logRow: HTMLDivElement }[] = [];
 
     private systemSettings: SystemSettings = {
         distance: "us_land",
@@ -48,13 +51,43 @@ export class CalcModule {
                 const input = this.stdInput.value.normalize("NFC").trim();
 
                 try {
-                    this.runStd(input);
+                    this.runStd(input, this.historyIdx === null ? undefined : this.history[this.historyIdx]);
 
                     this.stdInput.value = "";
                     this.stdInput.parentElement!.dataset.copy = this.stdInput.value;
+
+                    this.historyIdx = null;
                 } finally {
                     event.preventDefault();
                 }
+            } else if (event.code == "ArrowUp" && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
+                let pD = true;
+
+                if (this.historyIdx === null && this.stdInput.value.normalize("NFC").trim() == "" && this.history.length > 0) {
+                    this.historyIdx = this.history.length - 1;
+                    this.stdInput.value = this.history[this.historyIdx].code;
+                } else if (this.historyIdx !== null && this.historyIdx !== 0) {
+                    this.historyIdx -= 1;
+                    this.stdInput.value = this.history[this.historyIdx].code;
+                } else {
+                    pD = false;
+                }
+
+                if (pD) event.preventDefault();
+            } else if (event.code == "ArrowDown" && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
+                let pD = true;
+
+                if (this.historyIdx !== null && this.historyIdx === this.history.length - 1) {
+                    this.historyIdx = null;
+                    this.stdInput.value = "";
+                } else if (this.historyIdx !== null) {
+                    this.historyIdx += 1;
+                    this.stdInput.value = this.history[this.historyIdx].code;
+                } else {
+                    pD = false;
+                }
+
+                if (pD) event.preventDefault();
             }
         });
 
@@ -234,14 +267,14 @@ export class CalcModule {
         return span.childNodes.length == 0 ? null : span;
     }
 
-    private runStd(input: string) {
+    private runStd(input: string, historyRow?: typeof this.history[number]) {
         let output: { success: true, value: Value } | { success: false, errType: ErrType };
         try {
             const ast = parseStd(input, this.systemSettings);
 
             output = {
                 success: true,
-                value: runCalc(ast, [...this.history]),
+                value: runCalc(ast, [...this.inputs]),
             };
         } catch (err) {
             if (err instanceof CalcError) {
@@ -254,18 +287,35 @@ export class CalcModule {
             }
         }
 
-        if (output.success) this.history.unshift(output.value);
+        if (output.success) this.inputs.unshift(output.value);
 
         console.log(output);
 
         const shouldScroll = this.logDiv.scrollTop >= this.logDiv.scrollHeight - this.logDiv.offsetHeight - SCROLL_GRACE_PIXELS;
 
-        const logRow = document.createElement("div");
+        const insertHistoryRow = historyRow === undefined;
+
+        if (historyRow === undefined) {
+            historyRow = {
+                code: input,
+                logRow: document.createElement("div"),
+            };
+        } else {
+            historyRow.code = input;
+            
+            while (historyRow.logRow.firstChild !== null) {
+                historyRow.logRow.removeChild(historyRow.logRow.firstChild);
+            }
+
+            for (const class_ of historyRow.logRow.classList) {
+                historyRow.logRow.classList.remove(class_);
+            }
+        }
 
         const logCode = document.createElement("div");
         logCode.classList.add("calc_code");
         logCode.textContent = input;
-        logRow.appendChild(logCode);
+        historyRow.logRow.appendChild(logCode);
 
         if (output.success) {
             const logOutput = document.createElement("div");
@@ -281,17 +331,20 @@ export class CalcModule {
                 }
             }
 
-            logRow.appendChild(logOutput);
+            historyRow.logRow.appendChild(logOutput);
         } else {
-            logRow.classList.add("calc_err");
+            historyRow.logRow.classList.add("calc_err");
 
             const logOutput = document.createElement("div");
             logOutput.classList.add("calc_output");
             logOutput.textContent = output.errType.toUpperCase();
-            logRow.appendChild(logOutput);
+            historyRow.logRow.appendChild(logOutput);
         }
 
-        this.logDiv.appendChild(logRow);
+        if (insertHistoryRow) {
+            this.logDiv.appendChild(historyRow.logRow);
+            this.history.push(historyRow);
+        }
 
         if (shouldScroll) {
             this.logDiv.scrollTo(0, this.logDiv.scrollHeight);
