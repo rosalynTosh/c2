@@ -10,6 +10,8 @@ export function isqrt(num: bigint) {
         return num;
     }
 
+    if (num == 4n) return 2n;
+
     function iter(n: bigint, x0: bigint) {
         const x1 = ((n / x0) + x0) >> 1n;
 

@@ -1,7 +1,7 @@
 import { AST } from "./ast";
 import { findApprox, findQuickApprox, floatToRational, isqrt } from "./const_approx";
 import { CalcError } from "./err";
-import { abs, add, ceil, div, floor, mod, mul, neg, Num, pow, round, sub, trunc } from "./numbers";
+import { abs, add, castFloat, castInt, castRational, ceil, div, floor, mod, mul, neg, Num, pow, round, sub, trunc } from "./numbers";
 import { convert, divUnits, mulUnits, powUnit } from "./units/ops";
 import { Unit } from "./units/unit";
 
@@ -147,6 +147,43 @@ function runCalcInternal(ast: AST, inputs: Value[], logInputs: (Value | null)[])
                             type: "rational",
                             ...findApprox(rat.n, rat.d, maxD)
                         },
+                        unit: arg.unit
+                    };
+                }
+                case "int": {
+                    return {
+                        num: castInt(arg.num),
+                        unit: arg.unit
+                    };
+                }
+                case "rational": {
+                    return {
+                        num: castRational(arg.num),
+                        unit: arg.unit
+                    };
+                }
+                case "float": {
+                    return {
+                        num: castFloat(arg.num),
+                        unit: arg.unit
+                    };
+                }
+                case "sqrt": {
+                    if (arg.unit !== null && arg.unit.baseUnits.length != 0) {
+                        throw new CalcError("domain");
+                    } else {
+                        return {
+                            num: pow(arg.num, { type: "rational", n: 1n, d: 2n }),
+                            unit: arg.unit === null ? null : {
+                                scale: pow(arg.unit.scale, { type: "rational", n: 1n, d: 2n }),
+                                baseUnits: []
+                            }
+                        };
+                    }
+                }
+                case "isqrt": {
+                    return {
+                        num: { type: "int", int: isqrt(castInt(arg.num).int) },
                         unit: arg.unit
                     };
                 }

@@ -1,5 +1,8 @@
 // Future todo: standardize +/-Inf and +/-0 for int/rational, prevent NaN with floats
 
+import { floatToRational } from "./const_approx";
+import { CalcError } from "./err";
+
 export interface IntNum {
     readonly type: "int";
     readonly int: bigint;
@@ -341,6 +344,56 @@ export function round(arg: Num): Num {
         }
         case "float": {
             return { type: "float", num: Math.round(arg.num) };
+        }
+    }
+}
+
+export function castInt(arg: Num): IntNum {
+    switch (arg.type) {
+        case "int": {
+            return arg;
+        }
+        case "rational": {
+            if (arg.d != 1n) {
+                throw new CalcError("domain");
+            }
+
+            return { type: "int", int: arg.n };
+        }
+        case "float": {
+            if (!Number.isInteger(arg.num)) {
+                throw new CalcError("domain");
+            }
+
+            return { type: "int", int: BigInt(arg.num) };
+        }
+    }
+}
+
+export function castRational(arg: Num): RationalNum {
+    switch (arg.type) {
+        case "int": {
+            return { type: "rational", n: arg.int, d: 1n };
+        }
+        case "rational": {
+            return arg;
+        }
+        case "float": {
+            return floatToRational(arg.num);
+        }
+    }
+}
+
+export function castFloat(arg: Num): FloatNum {
+    switch (arg.type) {
+        case "int": {
+            return { type: "float", num: Number(arg.int) };
+        }
+        case "rational": {
+            return { type: "float", num: Number(arg.n) / Number(arg.d) };
+        }
+        case "float": {
+            return arg;
         }
     }
 }

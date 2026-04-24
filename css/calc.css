@@ -60,11 +60,11 @@
 }
 
 #calc #calc_log > div.calc_err {
-    background-color: #fce9eb;
+    background-color: #f9d2d7;
 }
 
 #calc #calc_log > div.calc_err:nth-child(even) {
-    background-color: #f9d2d7;
+    background-color: #fce9eb;
 }
 
 #calc .calc_err .calc_id {
