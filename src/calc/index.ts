@@ -1,11 +1,30 @@
 import { runCalc } from "./run_calc";
 import { parseStd } from "./std_parsing";
 import { parseUnit } from "./units/unit_parsing";
+import { CalendarSystem } from "./units/unit_props";
+
+export interface SystemSettings {
+    distance: "us_land" | "us_survey" | "nautical";
+    ptStandsFor: "point" | "pint";
+    volume: "us" | "imperial";
+    weight: "troy" | "us";
+    ton: "si" | "short" | "long";
+    calendar: CalendarSystem;
+}
 
 export class CalcModule {
     private logDiv: HTMLDivElement;
     private stdInput: HTMLTextAreaElement;
     private fpInput: HTMLTextAreaElement;
+
+    private systemSettings: SystemSettings = {
+        distance: "us_land",
+        ptStandsFor: "pint",
+        volume: "us",
+        weight: "us",
+        ton: "short",
+        calendar: "gregorian",
+    };
 
     constructor() {
         this.logDiv = document.getElementById("calc_log") as HTMLDivElement;
@@ -20,7 +39,7 @@ export class CalcModule {
             if (event.code === "Enter" && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
                 const input = this.stdInput.value;
 
-                const ast = parseStd(input);
+                const ast = parseStd(input, this.systemSettings);
                 const output = runCalc(ast, []);
 
                 console.log(output);

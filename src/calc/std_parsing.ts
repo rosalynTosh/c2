@@ -1,9 +1,12 @@
+import { SystemSettings } from ".";
 import { AST, BinOpAST, NumAST } from "./ast";
 import { CONSTS } from "./consts";
 import { add, Num, simplify } from "./numbers";
+import { Unit } from "./units/unit";
 import { parseUnit } from "./units/unit_parsing";
+import { UNIT_PROPS } from "./units/unit_props";
 
-export function parseStd(input: string): AST {
+export function parseStd(input: string, systemSettings: SystemSettings): AST {
     const toks = (input.normalize("NFC").match(/(?:(?:[0-9]+_+)*[0-9]+\.)?[0-9]+(?:_+[0-9]+)*(?:(?:\s*|_)[a-zA-Z\xb0åÄµöÖΩ]+(?:_+[a-zA-Z\xb0åÄµöÖΩ]+)*)?|[a-zA-Z][a-zA-Z0-9]*(?:_+[a-zA-Z0-9]+)*|\*+|\s+|;[^\r\n]*|./g) ?? []).filter(t => t[0] !== ";" && !t.match(/^\s+$/));
 
     type Grouping = {
@@ -158,6 +161,46 @@ export function parseStd(input: string): AST {
         }
     }
 
+    function disambiguateUnit(units: ReturnType<typeof parseUnit>, str?: string): Unit {
+        if (units.length == 0) throw new Error();
+        if (units.length == 1) {
+            // console.log((units[0].unit.scale.type == "int" ? units[0].unit.scale.int : units[0].unit.scale.type == "rational" ? units[0].unit.scale.n + " / " + units[0].unit.scale.d : units[0].unit.scale.num) + units[0].unit.baseUnits.map((baseUnit) => " " + baseUnit.unitId + (baseUnit.pow == 1n ? "" : "**" + baseUnit.pow)).join(""));
+
+            return units[0].unit;
+        }
+
+        let minModCount = units.reduce((min, { modCount }) => Math.min(min, modCount), Infinity);
+        let maxModCount = units.reduce((max, { modCount }) => Math.max(max, modCount), -Infinity);
+
+        if (minModCount !== maxModCount) {
+            return disambiguateUnit(units.filter(({ modCount }) => modCount == minModCount), str);
+        }
+
+        if (units.some(({ usesLongShortMod }) => usesLongShortMod) && units.some(({ usesLongShortMod }) => !usesLongShortMod)) {
+            return disambiguateUnit(units.filter(({ usesLongShortMod }) => usesLongShortMod), str);
+        }
+
+        const disambiguators = (["distance", "ptStandsFor", "volume", "weight", "ton", "calendar"] as const).filter((d) => units.every(({ unit }) => unit.baseUnits.some((b) => d in (UNIT_PROPS[b.unitId].disambiguators ?? {}))));
+
+        for (const disam of disambiguators) {
+            const setting = systemSettings[disam];
+            const filtered = units.filter(({ unit }) => unit.baseUnits.some((b) => (UNIT_PROPS[b.unitId].disambiguators ?? {})[disam]?.system == setting));
+
+            if (filtered.length != 0 && filtered.length < units.length) return disambiguateUnit(filtered, str);
+        }
+
+        console.error(...(str === undefined ? [] : [str]), units);
+        throw new Error();
+    }
+
+    // for (let i = 0n; i < 52n ** 2n; i++) {
+    //     const alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    //     try {
+    //         const str = /*alpha[Number(i / 52n / 52n)] + */alpha[Number(i / 52n % 52n)] + alpha[Number(i % 52n)];
+    //         disambiguateUnit(parseUnit(str), str);
+    //     } catch (err) {}
+    // }
+
     // Group 5: units
     function parseUnits(toks: Grouping["toks"]): AST {
         console.log("units", toks);
@@ -169,7 +212,7 @@ export function parseStd(input: string): AST {
                 return {
                     type: "unitOp",
                     // unit: parseFullUnit(lastTok.toks),
-                    unit: parseUnit(lastTok.toks.join("_"))[0] ?? [], // todo
+                    unit: disambiguateUnit(parseUnit(lastTok.toks.join("_"))), // todo
                     arg: parseUnits(toks.slice(0, -1))
                 };
             }
@@ -213,7 +256,7 @@ export function parseStd(input: string): AST {
 
             return 1 in splitNum ? {
                 type: "unitOp",
-                unit: parseUnit(splitNum[1])[0] ?? [],
+                unit: disambiguateUnit(parseUnit(splitNum[1])),
                 arg: num
             } : num;
         } else if (toks.length == 1 && typeof toks[0] == "object" && toks[0].type == "()") {

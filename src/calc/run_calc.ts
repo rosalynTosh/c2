@@ -41,8 +41,8 @@ export function runCalc(ast: AST, inputs: Value[]): Value {
                 }
                 case "%": {
                     return {
-                        num: mod(lhs.num, convert(rhs.num, rhs.unit, lhs.unit)),
-                        unit: lhs.unit ?? rhs.unit
+                        num: mod(convert(lhs.num, lhs.unit, rhs.unit), rhs.num),
+                        unit: rhs.unit ?? lhs.unit
                     };
                 }
                 case "**": {

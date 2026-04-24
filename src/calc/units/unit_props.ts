@@ -102,7 +102,7 @@ export type UnitFormProps = ReadonlyArray<UnitWordProps>;
 
 export interface UnitDisambiguatorProps<System> {
     readonly system: System;
-    readonly systemForms: ReadonlyArray<UnitFormProps>;
+    readonly systemForms?: ReadonlyArray<UnitFormProps>;
     readonly shortSystemForms?: ReadonlyArray<UnitFormProps>;
 }
 
@@ -122,6 +122,7 @@ export type CalendarSystem = (
 
 export interface UnitDisambiguators {
     readonly distance?: UnitDisambiguatorProps<"us_land" | "us_survey" | "nautical">;
+    readonly ptStandsFor?: UnitDisambiguatorProps<"point" | "pint">;
     readonly volume?: UnitDisambiguatorProps<"us" | "imperial">;
     readonly weight?: UnitDisambiguatorProps<"troy" | "us">;
     readonly ton?: UnitDisambiguatorProps<"si" | "short" | "long">;
@@ -180,7 +181,7 @@ const NAUTICAL_DISTANCE_SYSTEM = {
     distance: {
         system: "nautical",
         systemForms: [[modifier("nautical")]],
-        shortSystemForms: [[modifier("naut")], [modifier("n")]],
+        shortSystemForms: [[modifier("naut")]],
     },
 } as const satisfies Partial<UnitDisambiguators>;
 
@@ -458,9 +459,9 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
             ...NAUTICAL_DISTANCE_SYSTEM,
         },
 
-        forms: [[noun("mile")]],
+        forms: simpleForms(["mile"]),
         shortForms: simpleForms(["mi"]),
-        rawShortForms: ["NM"],
+        rawShortForms: ["NM", "nmi", "n_mi", "mi_n"],
     },
     "nautical_league": {
         quantity: "length",
@@ -470,9 +471,9 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
             ...NAUTICAL_DISTANCE_SYSTEM,
         },
 
-        forms: [[noun("league")]],
+        forms: simpleForms(["league"]),
         shortForms: simpleForms(["lea"]),
-        rawShortForms: ["NL"],
+        rawShortForms: ["NL", "nlea", "n_lea", "lea_n"],
     },
     "link": {
         quantity: "length",
@@ -519,6 +520,12 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
     "point": {
         quantity: "length",
         conversionFactor: mul(FOOT_CONVERSION_FACTOR, invInt(12n * 72n)),
+
+        disambiguators: {
+            ptStandsFor: {
+                system: "point",
+            },
+        },
 
         forms: simpleForms(["point"]),
         shortForms: simpleForms(["pt", "pts"]),
@@ -593,6 +600,9 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
         conversionFactor: div(US_GALLON_CONVERSION_FACTOR, int(8n)),
 
         disambiguators: {
+            ptStandsFor: {
+                system: "pint",
+            },
             ...US_VOLUME_SYSTEM,
         },
 
@@ -603,12 +613,8 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
         quantity: "volume",
         conversionFactor: div(US_GALLON_CONVERSION_FACTOR, int(16n)),
 
-        disambiguators: {
-            ...US_VOLUME_SYSTEM,
-        },
-
-        forms: simpleForms(["cup"]),
-        shortForms: simpleForms(["c", "cup", "cups"]),
+        forms: [[noun("cup")], [modifier("us"), noun("cup")]],
+        shortForms: [[modifier("us"), noun("c")], [noun("cup")], [modifier("us"), noun("cup")], [noun("cups")], [modifier("us"), noun("cups")]],
     },
     "us_gill": {
         quantity: "volume",
@@ -692,6 +698,9 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
         conversionFactor: div(IMPERIAL_GALLON_CONVERSION_FACTOR, int(8n)),
 
         disambiguators: {
+            ptStandsFor: {
+                system: "pint",
+            },
             ...IMPERIAL_VOLUME_SYSTEM,
         },
 

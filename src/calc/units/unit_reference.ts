@@ -130,7 +130,7 @@ function buildForms(unitProps: UnitProps): Map<string, { lowercases: number }> {
 
         let modifiedCombSplitForms: typeof combSplitForms = [];
 
-        for (const formProps of systemForms) {
+        for (const formProps of systemForms ?? []) {
             const opts = formProps.map((word) => buildWordForms(word, false));
             const systemSplitForms = cartProd(opts);
 
