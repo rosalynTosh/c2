@@ -1,10 +1,11 @@
 import { SystemSettings } from "..";
+import { CalcError } from "../err";
 import { Unit } from "./unit";
 import { parseUnit } from "./unit_parsing";
 import { UNIT_PROPS } from "./unit_props";
 
 export function disambiguateUnit(units: ReturnType<typeof parseUnit>, systemSettings: SystemSettings, str?: string): Unit {
-    if (units.length == 0) throw new Error();
+    if (units.length == 0) throw new CalcError("unk_unit");
     if (units.length == 1) {
         console.log((units[0].unit.scale.type == "int" ? units[0].unit.scale.int : units[0].unit.scale.type == "rational" ? units[0].unit.scale.n + " / " + units[0].unit.scale.d : units[0].unit.scale.num) + units[0].unit.baseUnits.map((baseUnit) => " " + baseUnit.unitId + (baseUnit.pow == 1n ? "" : "**" + baseUnit.pow)).join(""));
 
@@ -32,7 +33,7 @@ export function disambiguateUnit(units: ReturnType<typeof parseUnit>, systemSett
     }
 
     console.error(...(str === undefined ? [] : [str]), units);
-    throw new Error();
+    throw new CalcError("ambig_unit");
 }
 
 // for (let i = 0n; i < 52n ** 2n; i++) {

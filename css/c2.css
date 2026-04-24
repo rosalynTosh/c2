@@ -239,6 +239,22 @@ input:focus {
     background-color: #f0f0f0;
 }
 
+.calc_err .calc_code {
+    color: #861321;
+}
+
+.calc_err .calc_output {
+    color: #861321;
+}
+
+#calc_log > div.calc_err {
+    background-color: #fce9eb;
+}
+
+#calc_log > div.calc_err:nth-child(even) {
+    background-color: #f9d2d7;
+}
+
 #calc_log > div > span {
     align-self: end;
 }

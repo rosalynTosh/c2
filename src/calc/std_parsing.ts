@@ -1,6 +1,7 @@
 import { SystemSettings } from ".";
 import { AST, BinOpAST, NumAST } from "./ast";
 import { CONSTS } from "./consts";
+import { CalcError } from "./err";
 import { add, Num, simplify } from "./numbers";
 import { disambiguateUnit } from "./units/disambiguate";
 import { parseMultiUnit } from "./units/multi_unit_parsing";
@@ -37,7 +38,7 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
                 const parent = groupingStack.pop();
 
                 if (parent === undefined || tok !== parent.type[1]) {
-                    throw new SyntaxError();
+                    throw new CalcError("unbalanced");
                 }
 
                 groupingToks = parent.toks.concat([{
@@ -55,7 +56,7 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
     }
 
     if (groupingStack.length !== 0) {
-        throw new SyntaxError();
+        throw new CalcError("unbalanced");
     }
 
     console.log(groupingToks);
@@ -261,7 +262,7 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
             const num = CONSTS[toks[0]];
 
             if (num === undefined) {
-                throw new SyntaxError();
+                throw new CalcError("unk_const");
             }
 
             return {
@@ -269,7 +270,7 @@ export function parseStd(input: string, systemSettings: SystemSettings): AST {
                 num
             };
         } else {
-            throw new SyntaxError();
+            throw new CalcError("syntax");
         }
     }
 

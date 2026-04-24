@@ -1,3 +1,4 @@
+import { CalcError } from "../err";
 import { add, div, mul, Num, pow, sub } from "../numbers";
 import { Unit } from "./unit";
 import { BASE_QUANTITY, QUANTITY_DIMENSIONS, QuantityDimension, UNIT_PROPS } from "./unit_props";
@@ -52,11 +53,11 @@ export function convert(num: Num, from: Unit | null, to: Unit | null): Num {
     if (from === null || to === null) return num;
 
     if (!isDimensionallySafe(from, to)) {
-        throw new Error();
+        throw new CalcError("incompat");
     }
 
     if (!isOffsetSafe(from) || !isOffsetSafe(to)) {
-        throw new Error();
+        throw new CalcError("incompat");
     }
 
     const fromOffset = UNIT_PROPS[from.baseUnits[0]?.unitId]?.conversionOffset ?? { type: "int", int: 0n };

@@ -1,4 +1,5 @@
 import { AST } from "./ast";
+import { CalcError } from "./err";
 import { add, div, mod, mul, neg, Num, pow, sub } from "./numbers";
 import { convert, divUnits, mulUnits, powUnit } from "./units/ops";
 import { Unit } from "./units/unit";
@@ -52,18 +53,19 @@ function runCalcInternal(ast: AST, inputs: Value[]): InternalValue {
                 }
                 case "**": {
                     if (rhs.unit !== null && rhs.unit.baseUnits.length != 0) {
-                        throw new Error();
+                        throw new CalcError("pow_rhs");
                     }
 
                     const powArgNum = rhs.unit === null ? rhs.num : mul(rhs.unit.scale, rhs.num);
+                    const rhsInt = powArgNum.type == "int" ? powArgNum.int : powArgNum.type == "rational" && powArgNum.d == 1n ? powArgNum.n : null;
 
-                    if (powArgNum.type != "int") {
-                        throw new Error();
+                    if (rhsInt === null) {
+                        throw new CalcError("pow_rhs");
                     }
 
                     return {
-                        num: pow(lhs.num, powArgNum),
-                        unit: powUnit(lhs.unit, powArgNum.int)
+                        num: pow(lhs.num, { type: "int", int: rhsInt }),
+                        unit: powUnit(lhs.unit, rhsInt)
                     };
                 }
             }
@@ -79,7 +81,7 @@ function runCalcInternal(ast: AST, inputs: Value[]): InternalValue {
                     };
                 }
                 default: {
-                    throw new ReferenceError();
+                    throw new CalcError("unk_fn");
                 }
             }
         }

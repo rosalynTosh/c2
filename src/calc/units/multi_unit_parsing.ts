@@ -1,4 +1,5 @@
 import { SystemSettings } from "..";
+import { CalcError } from "../err";
 import { neg, Num, pow, simplify } from "../numbers";
 import { Grouping } from "../std_parsing";
 import { disambiguateUnit } from "./disambiguate";
@@ -42,11 +43,11 @@ export function parseMultiUnit(toks: Grouping["toks"], systemSettings: SystemSet
         let idx = toks.length;
 
         function toInt(rhs: Unit): bigint {
-            if (rhs.baseUnits.length != 0) throw new Error();
+            if (rhs.baseUnits.length != 0) throw new CalcError("unit_pow_rhs");
 
             const rhsInt = rhs.scale.type == "int" ? rhs.scale.int : rhs.scale.type == "rational" && rhs.scale.d == 1n ? rhs.scale.n : null;
 
-            if (rhsInt === null) throw new Error();
+            if (rhsInt === null) throw new CalcError("unit_pow_rhs");
 
             return rhsInt;
         }
@@ -77,7 +78,7 @@ export function parseMultiUnit(toks: Grouping["toks"], systemSettings: SystemSet
         if (toks.length != 0 && typeof toks[0] == "string" && toks[0] == "_") {
             const arg = parseUnaryOps(toks.slice(1));
 
-            if (arg === null) throw new Error();
+            if (arg === null) throw new CalcError("unit_syntax");
 
             return {
                 scale: neg(arg.scale),
@@ -127,7 +128,7 @@ export function parseMultiUnit(toks: Grouping["toks"], systemSettings: SystemSet
         } else if (toks.length == 1 && typeof toks[0] == "string" && toks[0][0].match(/[a-zA-Z]/)) {
             return disambiguateUnit(parseUnit(toks[0]), systemSettings);
         } else {
-            throw new SyntaxError();
+            throw new CalcError("unit_syntax");
         }
     }
 

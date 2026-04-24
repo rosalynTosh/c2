@@ -1,3 +1,4 @@
+import { CalcError, ErrType } from "./err";
 import { Num } from "./numbers";
 import { runCalc, Value } from "./run_calc";
 import { parseStd } from "./std_parsing";
@@ -234,10 +235,26 @@ export class CalcModule {
     }
 
     private runStd(input: string) {
-        const ast = parseStd(input, this.systemSettings);
-        const output = runCalc(ast, [...this.history]);
+        let output: { success: true, value: Value } | { success: false, errType: ErrType };
+        try {
+            const ast = parseStd(input, this.systemSettings);
 
-        this.history.unshift(output);
+            output = {
+                success: true,
+                value: runCalc(ast, [...this.history]),
+            };
+        } catch (err) {
+            if (err instanceof CalcError) {
+                output = {
+                    success: false,
+                    errType: err.getType(),
+                };
+            } else {
+                throw err;
+            }
+        }
+
+        if (output.success) this.history.unshift(output.value);
 
         console.log(output);
 
@@ -250,20 +267,29 @@ export class CalcModule {
         logCode.textContent = input;
         logRow.appendChild(logCode);
 
-        const logOutput = document.createElement("div");
-        logOutput.classList.add("calc_output");
-        logOutput.appendChild(this.formatOutput(output.num));
-        if (output.unit !== null) {
-            const fmt = this.formatUnit(output.unit);
+        if (output.success) {
+            const logOutput = document.createElement("div");
+            logOutput.classList.add("calc_output");
+            logOutput.appendChild(this.formatOutput(output.value.num));
+            if (output.value.unit !== null) {
+                const fmt = this.formatUnit(output.value.unit);
 
-            if (fmt !== null) {
-                logOutput.appendChild(document.createTextNode(" ["));
-                logOutput.appendChild(fmt);
-                logOutput.appendChild(document.createTextNode("]"));
+                if (fmt !== null) {
+                    logOutput.appendChild(document.createTextNode(" ["));
+                    logOutput.appendChild(fmt);
+                    logOutput.appendChild(document.createTextNode("]"));
+                }
             }
-        }
 
-        logRow.appendChild(logOutput);
+            logRow.appendChild(logOutput);
+        } else {
+            logRow.classList.add("calc_err");
+
+            const logOutput = document.createElement("div");
+            logOutput.classList.add("calc_output");
+            logOutput.textContent = output.errType.toUpperCase();
+            logRow.appendChild(logOutput);
+        }
 
         this.logDiv.appendChild(logRow);
 
