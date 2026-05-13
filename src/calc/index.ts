@@ -331,10 +331,13 @@ export class CalcModule {
         logId.textContent = "." + (historyIdx ?? this.history.length) + ":";
         historyRow.logRow.append(logId);
 
+        const logBlock = document.createElement("div");
+        logBlock.classList.add("calc_block");
+
         const logCode = document.createElement("div");
         logCode.classList.add("calc_code");
         logCode.textContent = input;
-        historyRow.logRow.appendChild(logCode);
+        logBlock.appendChild(logCode);
 
         if (output.success) {
             const logOutput = document.createElement("div");
@@ -350,15 +353,17 @@ export class CalcModule {
                 }
             }
 
-            historyRow.logRow.appendChild(logOutput);
+            logBlock.appendChild(logOutput);
         } else {
-            historyRow.logRow.classList.add("calc_err");
+            logBlock.classList.add("calc_err");
 
             const logOutput = document.createElement("div");
             logOutput.classList.add("calc_output");
             logOutput.textContent = output.errType.toUpperCase();
-            historyRow.logRow.appendChild(logOutput);
+            logBlock.appendChild(logOutput);
         }
+
+        historyRow.logRow.appendChild(logBlock);
 
         if (insertHistoryRow) {
             this.logDiv.appendChild(historyRow.logRow);

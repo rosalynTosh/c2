@@ -570,7 +570,7 @@ export const UNIT_PROPS: Readonly<Record<string, UnitProps>> = {
     // volume
     "liter": {
         quantity: "volume",
-        conversionFactor: invInt(1_000_000n),
+        conversionFactor: invInt(1_000n),
 
         forms: simpleForms(["liter", "litre"]),
         shortForms: simpleForms(["L"]),
